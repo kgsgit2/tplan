@@ -2,12 +2,13 @@
   "name": "tplan",
   "version": "1.0.0",
   "description": "드래그앤드롭 기반 여행 계획 관리 플랫폼",
-  "main": "index.html",
+  "private": true,
   "scripts": {
-    "dev": "python -m http.server 3000",
-    "serve": "node server.js",
-    "test": "echo \"테스트 준비 중\"",
-    "build": "echo \"빌드 준비 중\""
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit"
   },
   "repository": {
     "type": "git",
@@ -17,15 +18,27 @@
     "travel",
     "planning",
     "drag-drop",
-    "timeline"
+    "timeline",
+    "next.js"
   ],
   "author": "kgsgit2 <green25kg@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/kgsgit2/tplan/issues"
   },
-  "homepage": "https://github.com/kgsgit2/tplan#readme",
-  "devDependencies": {
-    "supabase": "^2.40.7"
+  "homepage": "https://tplan.kr",
+  "dependencies": {
+    "@types/node": "^24.3.1",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.35.0",
+    "eslint-config-next": "^15.5.2",
+    "next": "^15.5.2",
+    "postcss": "^8.5.6",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.9.2"
   }
 }

@@ -1,0 +1,1397 @@
+/* Google Material Icons */
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons+Outlined');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* TIMEPLANBOX ADAPTIVE v10.0 - COMPLETE PROTOTYPE STYLES */
+@layer base {
+  /* Google Material Design Color Scheme */
+  :root {
+    --md-green: #4CAF50;
+    --md-blue: #2196F3;
+    --md-purple: #9C27B0;
+    --md-orange: #FF9800;
+    --md-pink: #E91E63;
+    --md-deep-purple: #673AB7;
+    --md-primary: #1976D2;
+    --md-grey: #9E9E9E;
+    --md-light-grey: #F5F5F5;
+  }
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f8f9fa;
+    color: #212529;
+    overflow: hidden;
+    user-select: none;
+  }
+}
+
+@layer components {
+  /* 뷰 모드 클래스 - 추후 사용 예정 */
+  /* body.edit-mode { } */
+  /* body.compress-mode { } */
+  /* body.print-mode { } */
+  
+  /* 헤더 */
+  .header {
+    height: 56px;
+    background: #fff;
+    border-bottom: 2px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+  
+  .header-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .header-logo h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #495057;
+    letter-spacing: -0.5px;
+  }
+  
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+  }
+  
+  .header-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  .header-controls input {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    color: #495057;
+    padding: 8px 14px;
+    font-size: 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+  
+  .header-controls input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+  
+  /* 뷰 모드 토글 버튼 그룹 */
+  .view-mode-toggle {
+    display: flex;
+    gap: 0;
+    background: #f8f9fa;
+    padding: 2px;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+  }
+  
+  .view-mode-btn {
+    background: transparent;
+    color: #868e96;
+    border: none;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .view-mode-btn:hover {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+  }
+  
+  .view-mode-btn.active {
+    background: #667eea;
+    color: #fff;
+  }
+  
+  .btn-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  }
+  
+  .btn-header:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+
+  .btn-print {
+    background: linear-gradient(135deg, #20c997 0%, #12b886 100%);
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(32, 201, 151, 0.3);
+  }
+
+  .btn-print:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(32, 201, 151, 0.4);
+  }
+  
+  /* 메인 레이아웃 */
+  .main-layout {
+    display: grid;
+    grid-template-columns: 1fr 240px; /* 우측 패널 더 줄여서 타임라인 공간 확보 */
+    height: calc(100vh - 56px);
+    background: #f8f9fa;
+  }
+  
+  /* 타임라인 영역 */
+  .timeline-area {
+    background: #fff;
+    overflow: auto;
+    position: relative;
+    margin: 16px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+  
+  body.compress-mode .timeline-area,
+  body.print-mode .timeline-area {
+    margin: 8px;
+  }
+  
+  .timeline-container {
+    display: flex;
+    min-width: fit-content;
+    position: relative;
+    padding-bottom: 20px;
+  }
+  
+  /* 시간 라벨 - ADAPTIVE 버전: 숨김 처리 */
+  .time-labels {
+    display: none; /* 개별 타임바 사용시 숨김 */
+    width: 70px;
+    position: sticky;
+    left: 0;
+    background: #fff;
+    z-index: 15;
+    border-right: 2px solid #e9ecef;
+    padding-top: 48px;
+  }
+  
+  /* 개별 타임바 시스템 */
+  .day-timebar {
+    width: 25px;
+    background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    border-right: 1px solid #dee2e6;
+    position: relative;
+    flex-shrink: 0;
+  }
+  
+  .time-range-header {
+    height: 48px;
+    border-bottom: 2px solid #333;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px;
+    position: relative;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+  }
+  
+  .time-preset-buttons {
+    display: flex;
+    gap: 2px;
+    margin-top: 2px;
+  }
+  
+  .preset-btn {
+    padding: 1px 3px;
+    font-size: 8px;
+    border: 1px solid #ccc;
+    background: white;
+    cursor: pointer;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  
+  .preset-btn:hover {
+    background: #e3f2fd;
+    border-color: #2196f3;
+  }
+  
+  .preset-btn.active {
+    background: #2196f3;
+    color: white;
+    border-color: #1976d2;
+  }
+  
+  .time-range-selector {
+    position: sticky;
+    top: 0;
+    background: white;
+    border-bottom: 2px solid #dee2e6;
+    padding: 4px 2px;
+    z-index: 20;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .time-range-selector select {
+    width: 40px;
+    padding: 2px;
+    font-size: 10px;
+    border: 1px solid #ddd;
+    background: white;
+    cursor: pointer;
+  }
+  
+  .individual-time-label {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: #495057;
+    border-bottom: 1px solid #f1f3f5;
+    position: relative;
+    font-weight: 600;
+  }
+  
+  .time-label {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: #333;
+    border-bottom: 1px solid #f1f3f5;
+    position: relative;
+    font-weight: 700;
+  }
+  
+  .time-label.hour {
+    color: #495057;
+    font-weight: 600;
+    background: linear-gradient(90deg, #f8f9fa 0%, transparent 100%);
+  }
+  
+  /* 시간 블록 그룹 */
+  .time-label.dawn-block {
+    background: #f3f0ff;
+    color: #6c5ce7;
+  }
+  
+  .time-label.morning-block {
+    background: #fff3e0;
+    color: #f57c00;
+  }
+  
+  .time-label.afternoon-block {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+  
+  .time-label.evening-block {
+    background: #fce4ec;
+    color: #c2185b;
+  }
+  
+  /* 압축 모드에서 빈 시간 숨김 */
+  body.compress-mode .time-label.empty {
+    height: 20px;
+    opacity: 0.3;
+  }
+  
+  body.compress-mode .time-slot.empty {
+    height: 20px;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      #f8f9fa 10px,
+      #f8f9fa 20px
+    );
+  }
+  
+  /* 날짜 컬럼 */
+  .day-columns {
+    display: flex;
+  }
+  
+  .day-column {
+    width: 150px;
+    border-right: 1px solid #e9ecef;
+    position: relative;
+    background: #fff;
+  }
+  
+  body.compress-mode .day-column,
+  body.print-mode .day-column {
+    width: 130px;
+  }
+  
+  .day-header {
+    height: 48px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+    border-bottom: 2px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: #495057;
+    font-weight: 700;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    letter-spacing: -0.3px;
+  }
+  
+  .time-grid {
+    position: relative;
+  }
+  
+  .time-slot {
+    height: 60px;
+    border-bottom: 1px solid #f1f3f5;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  /* 10분 단위 가이드라인 */
+  .time-slot::before,
+  .time-slot::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #f8f9fa;
+    pointer-events: none;
+  }
+  
+  .time-slot::before {
+    top: 33.33%;
+  }
+  
+  .time-slot::after {
+    top: 66.66%;
+  }
+  
+  .time-slot:hover {
+    background: rgba(102, 126, 234, 0.04);
+  }
+  
+  .time-slot.drag-over {
+    background: rgba(102, 126, 234, 0.1);
+  }
+  
+  .time-slot.drag-over-10 {
+    background: linear-gradient(to bottom, 
+      rgba(102, 126, 234, 0.2) 0%, 
+      rgba(102, 126, 234, 0.2) 16.66%, 
+      transparent 16.66%);
+  }
+  
+  .time-slot.drag-over-20 {
+    background: linear-gradient(to bottom, 
+      transparent 0%,
+      transparent 16.66%,
+      rgba(102, 126, 234, 0.2) 16.66%, 
+      rgba(102, 126, 234, 0.2) 33.33%, 
+      transparent 33.33%);
+  }
+  
+  .time-slot.drag-over-30 {
+    background: linear-gradient(to bottom, 
+      transparent 0%,
+      transparent 33.33%,
+      rgba(102, 126, 234, 0.2) 33.33%, 
+      rgba(102, 126, 234, 0.2) 50%, 
+      transparent 50%);
+  }
+  
+  .time-slot.drag-over-40 {
+    background: linear-gradient(to bottom, 
+      transparent 0%,
+      transparent 50%,
+      rgba(102, 126, 234, 0.2) 50%, 
+      rgba(102, 126, 234, 0.2) 66.66%, 
+      transparent 66.66%);
+  }
+  
+  .time-slot.drag-over-50 {
+    background: linear-gradient(to bottom, 
+      transparent 0%,
+      transparent 66.66%,
+      rgba(102, 126, 234, 0.2) 66.66%, 
+      rgba(102, 126, 234, 0.2) 83.33%, 
+      transparent 83.33%);
+  }
+  
+  .time-slot.drag-over-60 {
+    background: linear-gradient(to bottom, 
+      transparent 0%,
+      transparent 83.33%,
+      rgba(102, 126, 234, 0.2) 83.33%, 
+      rgba(102, 126, 234, 0.2) 100%);
+  }
+  
+  /* 플랜박스 영역 */
+  .planbox-area {
+    background: #fff;
+    margin: 12px 12px 12px 0;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    height: calc(100vh - 80px);
+    overflow: hidden;
+  }
+  
+  /* planbox-header 스타일 제거 - 더 이상 사용하지 않음 */
+  
+  .add-planbox-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--md-primary);
+    color: #fff;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  }
+  
+  .add-planbox-btn:hover {
+    background: #1565C0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.16);
+  }
+  
+  .planbox-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 10px;
+    min-height: 0;
+  }
+  
+  /* 플랜박스 아이템 */
+  .planbox-item {
+    background: #fff;
+    border: 2px solid #e9ecef;
+    margin-bottom: 10px;
+    padding: 8px;
+    cursor: move;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* border-radius 제거 - 각진 모서리 */
+    height: 60px;
+    min-height: 60px;
+    max-height: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  
+  .planbox-item:hover {
+    border-color: #667eea;
+    transform: translateX(-4px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  }
+  
+  .planbox-item:hover .planbox-controls {
+    display: flex !important;
+  }
+  
+  .planbox-item.dragging {
+    opacity: 0.05;
+  }
+  
+  /* 드래그 중 시간 표시 - 마우스 따라다니기 */
+  /* 드래그 중 플랜박스 시간 강조 */
+  .planbox-item.dragging .planbox-time {
+    background: #ff4757;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    animation: timeUpdate 0.5s ease;
+  }
+  
+  @keyframes timeUpdate {
+    0% {
+      background: #ff4757;
+      transform: scale(1.1);
+    }
+    100% {
+      background: #ff4757;
+      transform: scale(1);
+    }
+  }
+  
+  .planbox-item.cloneable {
+    border-style: dashed;
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+  }
+  
+  /* 새벽 시간대 표시 */
+  .planbox-item.dawn-time .planbox-time {
+    background: #ffeaa7;
+    color: #d63031;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+  
+  .planbox-item.food {
+    border-left: 5px solid #FF9800;
+    background: linear-gradient(to right, rgba(255,152,0,0.08) 0%, white 50%);
+  }
+  
+  .planbox-item.transport {
+    border-left: 5px solid #4CAF50;
+    background: linear-gradient(to right, rgba(76,175,80,0.08) 0%, white 50%);
+  }
+  
+  .planbox-item.activity {
+    border-left: 5px solid #2196F3;
+    background: linear-gradient(to right, rgba(33,150,243,0.08) 0%, white 50%);
+  }
+  
+  .planbox-item.sightseeing {
+    border-left: 5px solid #9C27B0;
+    background: linear-gradient(to right, rgba(156,39,176,0.08) 0%, white 50%);
+  }
+  
+  .planbox-item.shopping {
+    border-left: 5px solid #E91E63;
+    background: linear-gradient(to right, rgba(233,30,99,0.08) 0%, white 50%);
+  }
+  
+  .planbox-item.accommodation {
+    border-left: 5px solid #673AB7;
+    background: linear-gradient(to right, rgba(103,58,183,0.08) 0%, white 50%);
+  }
+  
+  .planbox-time-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  
+  .planbox-time {
+    font-size: 12px;
+    color: #212529;
+    font-weight: 600;
+  }
+
+  .planbox-endtime {
+    font-size: 11px;
+    color: #667eea;
+    font-weight: 600;
+    margin-left: 8px;
+  }
+  
+  .planbox-duration {
+    font-size: 11px;
+    background: #f8f9fa;
+    color: #495057;
+    padding: 2px 6px;
+    font-weight: 600;
+    border-radius: 4px;
+  }
+  
+  .planbox-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 6px;
+  }
+  
+  .planbox-info {
+    display: none;  /* 타임존에서는 비용 숨김 */
+    font-size: 13px;
+    color: #212529;
+    margin-bottom: 4px;
+  }
+  
+  .planbox-memo {
+    display: none;  /* 타임존에서는 메모 숨김 */
+    font-size: 12px;
+    color: #495057;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;  /* 표준 속성 추가 */
+    -webkit-box-orient: vertical;
+    line-height: 1.4;
+  }
+  
+  .planbox-controls {
+    display: flex;
+    gap: 4px;
+  }
+  
+  .planbox-control {
+    width: 28px;
+    height: 28px;
+    background: #f8f9fa;
+    border: none;
+    color: #495057;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  
+  .planbox-control:hover {
+    color: #212529;
+    background: #e9ecef;
+    transform: translateY(-1px);
+  }
+  
+  .planbox-control.clone {
+    font-weight: normal;
+  }
+  
+  .planbox-control.clone.active {
+    background: #667eea;
+    color: white;
+  }
+  
+  .planbox-control.clone.active .material-icons {
+    color: white;
+  }
+  
+  .planbox-control.delete:hover {
+    color: #fff;
+    background: #ff6b6b;
+  }
+  
+  /* 배치된 박스 */
+  .placed-box {
+    position: absolute;
+    left: 0;  /* 좌우 여백 제거 */
+    right: 0;  /* 좌우 여백 제거 */
+    background: #fff;
+    border: none;  /* 모든 테두리 제거 */
+    padding: 4px 8px;  /* 상하 패딩 줄여서 콘텐츠 공간 확보 */
+    cursor: move;
+    z-index: 5;
+    transition: all 0.3s ease;
+    overflow: hidden; /* 텍스트가 박스를 넘지 않도록 */
+    /* border-radius 제거 - 각진 모서리 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    min-height: 20px;
+  }
+  
+  /* 압축된 박스 스타일 */
+  .placed-box.compressed {
+    background: linear-gradient(180deg, 
+      var(--box-color, #fff) 0%,
+      var(--box-color, #fff) 35%,
+      repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 2px,
+        rgba(0,0,0,0.1) 2px,
+        rgba(0,0,0,0.1) 4px
+      ) 35%,
+      repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 2px,
+        rgba(0,0,0,0.1) 2px,
+        rgba(0,0,0,0.1) 4px
+      ) 65%,
+      var(--box-color, #fff) 65%,
+      var(--box-color, #fff) 100%
+    );
+    opacity: 0.95;
+  }
+  
+  /* 압축 인디케이터 */
+  .compress-indicator {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.95);
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    font-size: 14px;
+    z-index: 10;
+    transition: all 0.2s;
+  }
+  
+  .compress-indicator:hover {
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+  }
+  
+  /* 실제 시간 배지 */
+  .actual-duration-badge {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 9;
+  }
+  
+  /* 물결 패턴 */
+  .wave-pattern {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 45%;
+    height: 10%;
+    pointer-events: none;
+    opacity: 0.5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    letter-spacing: 2px;
+  }
+  
+  .placed-box:hover {
+    z-index: 6;
+    /* transform 제거 - 타임셀에 정확히 맞춤 유지 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: #fafbfc;  /* 호버시 배경색 약간 변경 */
+  }
+  
+  .placed-box.dragging {
+    opacity: 0.05;
+    z-index: 100;
+  }
+  
+  .placed-box.resizing {
+    cursor: ns-resize;
+    opacity: 0.8;
+  }
+  
+  .placed-box.food {
+    background: linear-gradient(90deg, #FFF5E6 0%, #FFEFDD 100%);
+    border: none;
+    /* 왼쪽 색상 강조를 위한 box-shadow로 대체 */
+    box-shadow: inset 4px 0 0 #FF9500, 0 2px 4px rgba(0, 0, 0, 0.06);
+  }
+  
+  .placed-box.transport {
+    background: linear-gradient(90deg, #E6FFF5 0%, #DFFFF0 100%);
+    border: none;
+    /* 왼쪽 색상 강조를 위한 box-shadow로 대체 */
+    box-shadow: inset 4px 0 0 #00D084, 0 2px 4px rgba(0, 0, 0, 0.06);
+  }
+  
+  .placed-box.activity {
+    background: linear-gradient(90deg, #EBF3FF 0%, #E1EDFF 100%);
+    border: none;
+    /* 왼쪽 색상 강조를 위한 box-shadow로 대체 */
+    box-shadow: inset 4px 0 0 #579AFF, 0 2px 4px rgba(0, 0, 0, 0.06);
+  }
+  
+  .placed-box.sightseeing {
+    background: linear-gradient(90deg, #F4EDFF 0%, #EDE4FF 100%);
+    border: none;
+    /* 왼쪽 색상 강조를 위한 box-shadow로 대체 */
+    box-shadow: inset 4px 0 0 #A374F9, 0 2px 4px rgba(0, 0, 0, 0.06);
+  }
+  
+  .placed-box.shopping {
+    background: linear-gradient(90deg, #FFEBF2 0%, #FFDFEA 100%);
+    border: none;
+    /* 왼쪽 색상 강조를 위한 box-shadow로 대체 */
+    box-shadow: inset 4px 0 0 #FF6B9D, 0 2px 4px rgba(0, 0, 0, 0.06);
+  }
+  
+  .placed-box.accommodation {
+    background: linear-gradient(90deg, #F0E9FF 0%, #E8DFFF 100%);
+    border: none;
+    /* 왼쪽 색상 강조를 위한 box-shadow로 대체 */
+    box-shadow: inset 4px 0 0 #784AF4, 0 2px 4px rgba(0, 0, 0, 0.06);
+  }
+
+  /* 작은 박스 크기별 스타일 - 20분 박스 */
+  .placed-box.tiny {
+    padding: 2px 6px;
+    position: relative;  /* floating controls를 위한 position */
+  }
+  
+  .placed-box.tiny .placed-box-time-header,
+  .placed-box.tiny .placed-box-info,
+  .placed-box.tiny .placed-box-controls {
+    display: none;
+  }
+  
+  .placed-box.tiny .placed-box-header {
+    margin: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: calc(100% - 20px);  /* floating controls 공간 확보 */
+  }
+  
+  .placed-box.tiny .placed-box-time {
+    font-size: 12px;  /* 10px → 12px */
+    font-weight: 700;
+    margin-right: 4px;
+    white-space: nowrap;
+  }
+  
+  .placed-box.tiny .placed-box-title {
+    font-size: 10px;
+    font-weight: 500;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* 30분 박스 - 한줄 표시 */
+  .placed-box.compact {
+    padding: 4px 8px;
+  }
+
+  .placed-box.compact .placed-box-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;  /* 컨테이너 오버플로우 방지 */
+  }
+  
+  .placed-box.compact .placed-box-header {
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .placed-box.compact .placed-box-time {
+    font-size: 13px;  /* 11px → 13px */
+    font-weight: 600;
+  }
+  
+  .placed-box.compact .placed-box-title {
+    font-size: 12px;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;  /* 너비 제한 */
+  }
+  
+  .placed-box.compact .placed-box-time-header,
+  .placed-box.compact .placed-box-info {
+    display: none;
+  }
+  
+  /* 40분 박스 - 시간과 제목이 한 줄에 표시 */
+  .placed-box.medium {
+    padding: 6px 8px;
+  }
+  
+  .placed-box.medium .placed-box-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 100%;
+  }
+  
+  .placed-box.medium .placed-box-time {
+    font-size: 14px;  /* 12px → 14px */
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  
+  .placed-box.medium .placed-box-title {
+    font-size: 13px;
+    font-weight: 500;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .placed-box.medium .placed-box-info,
+  .placed-box.medium .placed-box-memo {
+    display: none;
+  }
+  
+  /* 중복된 compact 스타일 제거 - 위의 정의 사용 */
+  
+  .placed-box-time-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2px;
+  }
+  
+  .placed-box-time {
+    font-size: 14px;  /* 11px → 14px - 일반 크기 박스 */
+    color: #212529;
+    font-weight: 600;
+  }
+  
+  .placed-box-duration {
+    font-size: 10px;
+    color: #667eea;
+    font-weight: 600;
+  }
+  
+  .placed-box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2px;
+    overflow: hidden;
+  }
+  
+  .placed-box-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #212529;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    line-height: 1.3;
+  }
+  
+  /* 외부 플로팅 컨트롤 */
+  .placed-box-floating-controls {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: none;
+    gap: 4px;
+    z-index: 20;
+  }
+
+  .placed-box:hover .placed-box-floating-controls {
+    display: flex;
+  }
+  
+  /* 모든 크기의 박스에서 더보기 아이콘 표시 */
+  .placed-box .placed-box-floating-controls .view {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 50%;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    border: none;
+    pointer-events: all;  /* 클릭 이벤트 활성화 */
+  }
+  
+  .placed-box .placed-box-floating-controls .view:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: scale(1.1);
+  }
+  
+  /* tiny 박스의 아이콘은 더 작게 */
+  .placed-box.tiny .placed-box-floating-controls .view {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .placed-box.tiny .placed-box-floating-controls .view .material-icons {
+    font-size: 12px !important;
+  }
+
+  /* tiny 박스 hover 시에만 아이콘 표시 */
+  .placed-box.tiny .placed-box-floating-controls {
+    display: none;  /* 기본적으로 숨김 */
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    transform: none;
+    z-index: 100;
+  }
+  
+  .placed-box.tiny:hover .placed-box-floating-controls {
+    display: flex;  /* hover 시에만 표시 */
+  }
+  
+  /* compact, medium 박스도 hover 시에만 표시 */
+  .placed-box.compact .placed-box-floating-controls,
+  .placed-box.medium .placed-box-floating-controls {
+    display: none;
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    transform: none;
+    z-index: 100;
+  }
+  
+  .placed-box.compact:hover .placed-box-floating-controls,
+  .placed-box.medium:hover .placed-box-floating-controls {
+    display: flex;
+  }
+  
+  
+  .placed-box-control {
+    width: 20px;
+    height: 20px;
+    background: #f8f9fa;
+    border: none;
+    color: #495057;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.2s;
+    border-radius: 4px;
+  }
+  
+  .placed-box-control:hover {
+    color: #212529;
+    background: #e9ecef;
+  }
+  
+  .placed-box-control.delete {
+    color: #999;
+  }
+  
+  .placed-box-control.delete:hover {
+    color: #fff;
+    background: #f44336;
+  }
+  
+  .placed-box-control.delete span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .placed-box-info {
+    font-size: 11px;
+    color: #212529;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .placed-box-memo {
+    font-size: 11px;
+    color: #868e96;
+    line-height: 1.4;
+    margin-top: 2px;
+    overflow: hidden;
+    word-wrap: break-word;
+    white-space: normal;
+    flex: 1;
+    min-height: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
+  }
+  
+  .placed-box-location {
+    font-size: 11px;
+    color: #2196F3;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* 리사이징 중일 때 스타일 */
+  .placed-box.resizing {
+    opacity: 0.8;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 200;
+    cursor: ns-resize !important;
+  }
+  
+  /* 모달 */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+  }
+  
+  .modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  .modal-content {
+    background: #fff;
+    border-radius: 12px;
+    padding: 32px;
+    width: 500px;
+    max-width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+  }
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e9ecef;
+  }
+  
+  .modal-title {
+    font-size: 18px;
+    color: #212529;
+    font-weight: 700;
+  }
+  
+  .modal-close {
+    background: transparent;
+    border: none;
+    color: #adb5bd;
+    font-size: 24px;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+  
+  .modal-close:hover {
+    color: #495057;
+    background: #f8f9fa;
+  }
+  
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    color: #495057;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    color: #212529;
+    padding: 10px 14px;
+    font-size: 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+  
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+  
+  .form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+  }
+  
+  .time-inputs {
+    display: grid;
+    grid-template-columns: 90px 40px 90px 40px;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  .time-inputs input,
+  .time-inputs select {
+    width: 100%;
+  }
+  
+  .time-inputs span {
+    color: #868e96;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .end-time-display {
+    padding: 10px;
+    background: #f0f4ff;
+    border-radius: 8px;
+    color: #667eea;
+    font-weight: 600;
+    font-size: 14px;
+    text-align: center;
+    margin-top: 12px;
+  }
+  
+  .modal-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 28px;
+  }
+  
+  .btn {
+    padding: 10px 24px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 8px;
+  }
+  
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  }
+  
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+  
+  .btn-secondary {
+    background: #f8f9fa;
+    color: #495057;
+    border: 2px solid #e9ecef;
+  }
+  
+  .btn-secondary:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+  }
+  
+  .btn-danger {
+    background: #dc3545;
+    color: #fff;
+    border: 2px solid #dc3545;
+  }
+  
+  .btn-danger:hover {
+    background: #c82333;
+    border-color: #c82333;
+    transform: translateY(-1px);
+  }
+}
+
+@layer utilities {
+  /* 스크롤바 스타일 */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #f8f9fa;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #dee2e6;
+    border-radius: 5px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #ced4da;
+  }
+}
