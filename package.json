@@ -1,0 +1,31 @@
+{
+  "name": "tplan",
+  "version": "1.0.0",
+  "description": "드래그앤드롭 기반 여행 계획 관리 플랫폼",
+  "main": "index.html",
+  "scripts": {
+    "dev": "python -m http.server 3000",
+    "serve": "node server.js",
+    "test": "echo \"테스트 준비 중\"",
+    "build": "echo \"빌드 준비 중\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kgsgit2/tplan.git"
+  },
+  "keywords": [
+    "travel",
+    "planning",
+    "drag-drop",
+    "timeline"
+  ],
+  "author": "kgsgit2 <green25kg@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kgsgit2/tplan/issues"
+  },
+  "homepage": "https://github.com/kgsgit2/tplan#readme",
+  "devDependencies": {
+    "supabase": "^2.40.7"
+  }
+}
