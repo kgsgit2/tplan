@@ -1,59 +1,94 @@
-# 🚀 새로운 환경에서 TPlan 프로젝트 설정하기
+# 🔧 새 환경에서 TPlan 개발환경 설정 가이드
 
-**대상**: 다른 컴퓨터에서 이 프로젝트를 이어받아 작업하려는 개발자 (Claude Code 포함)
-
----
-
-## 📋 **사전 준비사항**
-
-### 1. 필수 소프트웨어 설치
-```bash
-# Node.js 18 이상 설치 확인
-node --version  # v18.0.0 이상이어야 함
-
-# npm 버전 확인  
-npm --version   # 8.0.0 이상 권장
-
-# Git 설치 확인
-git --version   # 2.0 이상
-```
-
-### 2. GitHub 접근 권한 설정 (선택사항)
-- SSH 키가 있다면 GitHub에 등록
-- 또는 HTTPS로 클론 (push 권한 없어도 됨)
+**작성일**: 2025년 9월 10일  
+**대상**: 새 컴퓨터에서 TPlan 프로젝트 작업 시작  
 
 ---
 
-## 🔽 **프로젝트 다운로드 및 설치**
+## 🚀 **빠른 시작 (Quick Start)**
 
-### 방법 1: Git Clone (권장)
+### 1️⃣ **저장소 클론 및 설치**
 ```bash
-# 저장소 클론
-git clone https://github.com/kgsgit2/tplan.git
-
-# 프로젝트 폴더로 이동
+git clone https://kgsgit2:[PAT_TOKEN]@github.com/kgsgit2/tplan.git
 cd tplan
-
-# 패키지 설치
 npm install
-
-# 개발 서버 실행
-npm run dev
 ```
 
-### 방법 2: 폴더 복사 (백업용)
-만약 Git이 안 된다면:
-1. 전체 `tplan` 폴더를 USB나 클라우드로 복사
-2. 새 컴퓨터에 붙여넣기
-3. 터미널에서 해당 폴더로 이동
-4. `npm install` 실행
-5. `npm run dev` 실행
+### 2️⃣ **개발 서버 실행**
+```bash
+npm run dev
+# → http://localhost:3000/planner
+```
+
+### 3️⃣ **기본 작업 환경 확인**
+- 플래너 페이지 접속 및 기능 테스트
+- 프로토타입과 시각적 동일성 확인
+- 플랜박스 생성/편집/필터링 동작 확인
 
 ---
 
-## ✅ **설치 확인**
+## 🔑 **GitHub 연동 설정**
 
-### 1. 개발 서버 실행 확인
+### 📝 **PAT (Personal Access Token) 정보**
+- **토큰**: `ghp_****************************` (실제 토큰은 별도 제공)
+- **만료일**: 90일 후 (정기 갱신 필요)
+- **권한**: repo, workflow, write:packages
+
+### 🔄 **기존 저장소에서 PAT 설정**
+```bash
+# 기존 프로젝트에서 원격 저장소 URL 변경
+git remote set-url origin https://kgsgit2:[PAT_TOKEN]@github.com/kgsgit2/tplan.git
+
+# 푸시 테스트
+git push origin main
+```
+
+### ✅ **Git 사용자 설정**
+```bash
+git config --global user.name "kgsgit2"
+git config --global user.email "green25kg@gmail.com"
+```
+
+---
+
+## 📦 **필수 개발 도구**
+
+### ⚡ **Node.js 환경**
+- **Node.js**: v18.0.0 이상 (권장: v22+)
+- **npm**: v8.0.0 이상
+- **패키지 매니저**: npm (yarn 대신 npm 사용)
+
+### 🔗 **외부 서비스 연동**
+- **Supabase JS**: v2.57.4 (자동 설치됨)
+- **GitHub CLI**: 선택사항 (PAT 토큰으로 대체 가능)
+
+### 💻 **권장 개발 도구**
+- **VSCode**: TypeScript, React 지원
+- **Chrome DevTools**: 디버깅용
+- **Git**: 버전 관리
+
+---
+
+## 🎯 **환경 변수 설정**
+
+### 📄 **`.env.local` 파일 생성**
+```bash
+# Supabase 연동 (향후 사용)
+NEXT_PUBLIC_SUPABASE_URL=https://zoulrywjxmmtvpdzngdw.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[추후_설정]
+
+# 카카오맵 API (프로토타입에서 확인된 키)
+NEXT_PUBLIC_KAKAO_API_KEY=d0d67d94afae47e0ab9c29b0e6aea5cf
+
+# 개발 환경
+NODE_ENV=development
+```
+
+---
+
+## 🔍 **설치 및 실행 확인**
+
+### 1. **개발 서버 실행 확인**
 ```bash
 npm run dev
 ```
@@ -66,11 +101,10 @@ npm run dev
 ✓ Ready in X.Xs
 ```
 
-### 2. 브라우저에서 확인
-- **메인 페이지**: http://localhost:3000 
-- **플래너 페이지**: http://localhost:3000/planner ⭐ **여기가 핵심!**
+### 2. **브라우저에서 확인**
+- **플래너 페이지**: http://localhost:3000/planner ⭐ **핵심 페이지**
 
-### 3. 플래너 페이지 동작 확인
+### 3. **플래너 페이지 동작 확인**
 ✅ **다음 기능들이 모두 동작해야 함**:
 - 헤더의 모든 버튼과 입력 필드
 - 좌측 타임라인 영역 (Day 1~7 컬럼들)
@@ -79,70 +113,63 @@ npm run dev
 - 플랜박스 더블클릭시 편집 모달 열기
 - 카테고리 필터링 동작
 
----
+## 🔍 **프로젝트 구조 확인**
 
-## 🔧 **개발 환경 설정**
-
-### 1. VSCode 추천 확장
-```json
-{
-  "recommendations": [
-    "bradlc.vscode-tailwindcss",
-    "ms-vscode.vscode-typescript-next",
-    "esbenp.prettier-vscode",
-    "ms-vscode.vscode-eslint"
-  ]
-}
-```
-
-### 2. 유용한 단축키
-- `Ctrl + Shift + P` → "TypeScript: Restart TS Server" (타입 오류시)
-- `Ctrl + `` ` → 터미널 열기
-- `Ctrl + Shift + F5` → 브라우저 하드 새로고침
-
-### 3. 브라우저 개발도구
-- F12 → 개발자 도구 
-- **Elements 탭**: CSS 스타일 확인/수정
-- **Console 탭**: JavaScript 오류 확인
-- **Network 탭**: 로딩 상태 확인
-
----
-
-## 📂 **중요한 파일 위치**
-
-### 핵심 작업 파일:
+### 📁 **핵심 파일 위치**
 ```
 tplan/
-├── src/app/globals.css           # ⭐ 모든 스타일 (수정금지)
-├── src/app/planner/page.tsx      # ⭐ 메인 로직 (주 작업 파일)
-├── docs/CURRENT_STATUS.md        # ⭐ 현재 작업 현황
-├── docs/PROGRESS.md              # 전체 프로젝트 진행사항
-├── package.json                  # 의존성 관리
-└── tailwind.config.js            # Tailwind 설정
+├── src/
+│   ├── app/
+│   │   ├── globals.css          # 🎨 프로토타입 완전 동일 CSS
+│   │   └── planner/
+│   │       └── page.tsx         # 🎯 메인 플래너 페이지
+│   ├── components/              # 향후 컴포넌트 분할용
+│   ├── hooks/                   # React 훅들
+│   ├── lib/                     # 유틸리티 함수
+│   └── types/                   # TypeScript 타입 정의
+├── docs/
+│   ├── PROGRESS.md              # 전체 프로젝트 진행사항
+│   ├── CURRENT_STATUS.md        # 현재 작업 상태
+│   └── NEW_ENVIRONMENT_SETUP.md # 🔧 이 파일
+├── package.json                 # Next.js 15.5.2 + TypeScript
+└── README.md
 ```
 
-### 참고 파일:
-```
-# 프로토타입 원본 (경로는 환경마다 다를 수 있음)
-D:\02_2025\02_tplan\dragdrop_web\timeplanbox-enhanced\prototype_backup\index-adaptive.html
-```
+### 🎪 **개발 서버 포트**
+- **기본 포트**: http://localhost:3000
+- **네트워크 접근**: http://[IP]:3000 
+- **플래너 페이지**: /planner
 
----
+## 🛡️ **보안 및 주의사항**
 
-## ⚠️ **주의사항**
+### 🔐 **PAT 토큰 관리**
+- ⚠️ **토큰 만료**: 90일 후 만료됨
+- 🔄 **갱신 방법**: GitHub Settings → Developer settings → Personal access tokens
+- 💾 **백업**: 토큰을 안전한 곳에 보관
+- 🚫 **공유 금지**: 토큰을 공개 저장소에 커밋하지 말 것
 
-### 1. 포트 충돌 해결
-만약 3000번 포트가 사용중이면:
+### 📝 **환경 변수 보안**
+- `.env.local` 파일은 절대 Git에 커밋하지 말 것
+- API 키는 환경 변수로만 관리
+- 프로덕션과 개발 환경 분리
+
+## 🔧 **문제 해결 (Troubleshooting)**
+
+### ❌ **일반적인 문제들**
+
+**1. 포트 충돌 (EADDRINUSE)**
 ```bash
 # 다른 포트로 실행
-npm run dev -- --port 3001
-
-# 또는 사용중인 프로세스 종료 (Windows)
-netstat -ano | findstr :3000
-taskkill /PID <PID번호> /F
+npm run dev -- -p 3001
 ```
 
-### 2. 모듈 설치 오류시
+**2. Node.js 버전 문제**
+```bash
+node --version  # v18+ 확인
+npm --version   # v8+ 확인
+```
+
+**3. 의존성 설치 실패**
 ```bash
 # 캐시 정리 후 재설치
 npm cache clean --force
@@ -150,76 +177,55 @@ rm -rf node_modules package-lock.json
 npm install
 ```
 
-### 3. TypeScript 오류시
+**4. Git 인증 실패**
 ```bash
-# Next.js 전체 재빌드
-rm -rf .next
+# PAT 토큰 재설정
+git remote set-url origin https://kgsgit2:[PAT_TOKEN]@github.com/kgsgit2/tplan.git
+```
+
+### 🆘 **긴급 복구 방법**
+```bash
+# 전체 환경 초기화
+git clone [저장소_URL]
+cd tplan
+npm install
 npm run dev
 ```
 
----
+## 📞 **세션 연속성 체크리스트**
 
-## 🎯 **다음 작업 시작하기**
-
-### 1. 현재 상태 파악
-1. **`docs/CURRENT_STATUS.md` 읽기** ⭐ **가장 중요**
-2. 플래너 페이지에서 기능 테스트
-3. 프로토타입과 시각적 비교
-
-### 2. 우선 작업 목록 (권장 순서)
-1. **드래그앤드롭 시스템** - 플랜박스를 타임라인에 배치
-2. **리사이징 기능** - 배치된 박스 크기 조절  
-3. **자동저장** - localStorage 기반
-4. **압축 모드** - 빈 시간 숨기기
-5. **인쇄 기능** - 스케줄 출력
-
-### 3. 코딩 시작 전 체크리스트
-- [ ] 개발 서버 실행됨 (`npm run dev`)
+### ✅ **새 환경 설정 완료 확인**
+- [ ] Git 저장소 클론 완료
+- [ ] npm install 성공
+- [ ] 개발 서버 실행 (http://localhost:3000/planner)
 - [ ] 플래너 페이지 정상 로드
-- [ ] 기본 플랜박스 4개 보임
-- [ ] 모달 열기/닫기 동작함
-- [ ] 프로토타입과 시각적으로 동일함
-- [ ] `CURRENT_STATUS.md` 읽음
+- [ ] 기본 기능들 동작 확인 (플랜박스 생성/편집)
+- [ ] Git 커밋/푸시 테스트 성공
+
+### 📋 **다음 작업 준비**
+- [ ] `docs/CURRENT_STATUS.md` 읽기
+- [ ] `docs/PROGRESS.md` 전체 현황 파악
+- [ ] 프로토타입과 현재 구현 비교
+- [ ] 우선순위 작업 선택 (드래그앤드롭 → 리사이징 → 자동저장)
 
 ---
 
-## 🆘 **문제 해결**
+## 🎯 **작업 시작 가이드**
 
-### 자주 발생하는 문제들:
+### 🏃‍♂️ **첫 세션 시작시**
+1. 이 파일로 환경 설정 완료
+2. `CURRENT_STATUS.md`로 현재 상태 파악
+3. `PROGRESS.md`로 전체 맥락 이해
+4. 개발 서버 실행 및 기능 테스트
 
-**1. 페이지가 안 열려요**
-```bash
-# 개발 서버 재시작
-Ctrl + C (서버 종료)
-npm run dev
-```
-
-**2. CSS가 적용 안돼요**
-- 브라우저 캐시 삭제 (`Ctrl + Shift + F5`)
-- Tailwind CSS 재컴파일 확인
-
-**3. TypeScript 오류가 계속 나요**  
-```bash
-# VSCode에서 TypeScript 서버 재시작
-Ctrl + Shift + P → "TypeScript: Restart TS Server"
-```
-
-**4. 플랜박스가 안 보여요**
-- 초기 데이터 로딩 확인
-- 브라우저 Console 탭에서 오류 확인
-- `initializeDefaultData()` 함수 호출 여부 확인
-
-**5. 모달이 안 열려요**
-- 더블클릭 이벤트 확인
-- `setIsModalOpen(true)` 호출 여부 확인
-- CSS의 `.modal.show` 클래스 확인
-
-### 긴급 연락처:
-- GitHub Issues: https://github.com/kgsgit2/tplan/issues
-- 이 문서 위치: `docs/NEW_ENVIRONMENT_SETUP.md`
+### 🔄 **작업 완료시**
+1. 변경사항 Git 커밋
+2. `CURRENT_STATUS.md` 업데이트
+3. 다음 우선순위 작업 기록
 
 ---
 
-**작성일**: 2025년 9월 10일  
-**작성자**: Claude Code  
-**업데이트**: 필요시 이 문서도 함께 업데이트 해주세요
+**🎉 이제 어떤 컴퓨터에서든 5분 안에 개발환경을 구축할 수 있습니다!**
+
+**마지막 업데이트**: 2025년 9월 10일  
+**다음 업데이트 예정**: PAT 토큰 만료 전 (90일 후)
