@@ -487,8 +487,8 @@
     border-radius: 8px;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     height: calc(100vh - 80px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     overflow: hidden;
   }
   
@@ -517,7 +517,7 @@
     flex: 1;
     overflow-y: auto;
     padding: 12px 10px;
-    min-height: 0;
+    min-height: 0; /* 플렉스 아이템이 축소될 수 있도록 */
   }
   
   /* 플랜박스 아이템 */
@@ -1393,5 +1393,105 @@
   
   ::-webkit-scrollbar-thumb:hover {
     background: #ced4da;
+  }
+
+  /* 드래그앤드롭 상태 스타일 */
+  .time-slot.drag-over {
+    background: rgba(102, 126, 234, 0.1) !important;
+    border: 2px dashed #667eea !important;
+    transform: scale(1.02);
+    transition: all 0.15s ease;
+  }
+  
+  .planbox-item:active {
+    cursor: grabbing !important;
+  }
+  
+  .placed-box {
+    transition: all 0.2s ease;
+  }
+  
+  .placed-box:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
+  }
+
+  /* 리사이즈 핸들 스타일 */
+  .resize-handle {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  
+  .placed-box:hover .resize-handle {
+    opacity: 1;
+  }
+  
+  .resize-handle:hover {
+    opacity: 1 !important;
+  }
+  
+  .resize-handle-bottom:hover div {
+    background: rgba(255,255,255,0.9) !important;
+    transform: translateX(-50%) scale(1.2);
+  }
+
+  /* 충돌 알림 애니메이션 */
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+
+  /* 인쇄용 스타일 */
+  @media print {
+    body {
+      font-size: 12px;
+      color: #000 !important;
+      background: #fff !important;
+    }
+    
+    .header {
+      display: none !important;
+    }
+    
+    .planbox-area {
+      display: none !important;
+    }
+    
+    .timeline-area {
+      margin: 0 !important;
+      box-shadow: none !important;
+      border: 1px solid #000 !important;
+    }
+    
+    .time-slot {
+      border: 1px solid #ccc !important;
+    }
+    
+    .placed-box {
+      background: #f0f0f0 !important;
+      color: #000 !important;
+      border: 1px solid #000 !important;
+      box-shadow: none !important;
+    }
+    
+    .resize-handle {
+      display: none !important;
+    }
+    
+    /* 인쇄 시 페이지 나누기 방지 */
+    .day-column {
+      break-inside: avoid;
+    }
+    
+    /* 충돌 알림 메시지 숨김 */
+    .conflict-message {
+      display: none !important;
+    }
   }
 }
