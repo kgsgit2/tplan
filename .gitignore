@@ -37,4 +37,5 @@ Thumbs.db
 .claude/
 
 # Vercel
-.vercel
+.vercelmcp-servers/
+nul

@@ -8,7 +8,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug"
   },
   "repository": {
     "type": "git",
@@ -42,6 +45,7 @@
     "typescript": "^5.9.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "@supabase/supabase-js": "^2.57.4"
   }
 }

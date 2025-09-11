@@ -823,13 +823,105 @@
   }
   
   .placed-box.dragging {
-    opacity: 0.05;
-    z-index: 100;
+    opacity: 0.05;  /* 원본과 동일 */
+    z-index: 1; /* z-index를 낮춰서 다른 요소 아래로 */
   }
   
   .placed-box.resizing {
-    cursor: ns-resize;
-    opacity: 0.8;
+    cursor: ns-resize !important;
+    opacity: 0.9;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    transition: none !important; /* 리사이징 중 transition 비활성화 */
+  }
+  
+  /* 리사이즈 핸들 호버 효과 */
+  .resize-handle-top:hover,
+  .resize-handle-bottom:hover {
+    background: rgba(74, 144, 226, 0.1) !important;
+  }
+  
+  /* 박스 호버 시 리사이즈 영역 표시 */
+  .placed-box:hover .resize-handle-top::after,
+  .placed-box:hover .resize-handle-bottom::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 2px;
+    background: rgba(74, 144, 226, 0.5);
+    border-radius: 1px;
+  }
+  
+  .placed-box:hover .resize-handle-top::after {
+    top: 2px;
+  }
+  
+  .placed-box:hover .resize-handle-bottom::after {
+    bottom: 2px;
+  }
+  
+  /* 드래그 고스트 스타일 - 원본 HTML과 동일 */
+  .drag-ghost {
+    position: absolute !important;
+    pointer-events: none !important;
+    opacity: 0.5;
+    border-radius: 0;
+    transition: none;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 12px;
+  }
+  
+  .drag-ghost.food {
+    background: rgba(255, 193, 7, 0.3);
+    border-top: 2px dashed #ffc107;
+    border-bottom: 2px dashed #ffc107;
+    border-left: 4px solid #ffc107;
+    color: #f39c12;
+  }
+  
+  .drag-ghost.transport {
+    background: rgba(40, 167, 69, 0.3);
+    border-top: 2px dashed #28a745;
+    border-bottom: 2px dashed #28a745;
+    border-left: 4px solid #28a745;
+    color: #27ae60;
+  }
+  
+  .drag-ghost.activity {
+    background: rgba(74, 144, 226, 0.3);
+    border-top: 2px dashed #4a90e2;
+    border-bottom: 2px dashed #4a90e2;
+    border-left: 4px solid #4a90e2;
+    color: #3498db;
+  }
+  
+  .drag-ghost.accommodation {
+    background: rgba(173, 80, 210, 0.3);
+    border-top: 2px dashed #ad50d2;
+    border-bottom: 2px dashed #ad50d2;
+    border-left: 4px solid #ad50d2;
+    color: #9b59b6;
+  }
+  
+  .drag-ghost.shopping {
+    background: rgba(255, 107, 157, 0.3);
+    border-top: 2px dashed #FF6B9D;
+    border-bottom: 2px dashed #FF6B9D;
+    border-left: 4px solid #FF6B9D;
+    color: #e91e63;
+  }
+  
+  .drag-ghost.sightseeing {
+    background: rgba(163, 116, 249, 0.3);
+    border-top: 2px dashed #A374F9;
+    border-bottom: 2px dashed #A374F9;
+    border-left: 4px solid #A374F9;
+    color: #9c27b0;
   }
   
   .placed-box.food {
@@ -1395,12 +1487,13 @@
     background: #ced4da;
   }
 
-  /* 드래그앤드롭 상태 스타일 */
+  /* 드래그앤드롭 상태 스타일 - 점선 제거 */
   .time-slot.drag-over {
-    background: rgba(102, 126, 234, 0.1) !important;
-    border: 2px dashed #667eea !important;
-    transform: scale(1.02);
-    transition: all 0.15s ease;
+    /* 점선 고스트 완전 제거 - 실선 고스트만 사용 */
+    /* background: rgba(102, 126, 234, 0.1) !important; */
+    /* border: 2px dashed #667eea !important; */
+    /* transform: scale(1.02); */
+    /* transition: all 0.15s ease; */
   }
   
   .planbox-item:active {

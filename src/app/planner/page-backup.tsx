@@ -50,8 +50,6 @@ export default function PlannerPage() {
   const [draggedData, setDraggedData] = useState<PlanBox | null>(null)
   const [isFirstDrop, setIsFirstDrop] = useState(true)
   const [originalTimeDisplay, setOriginalTimeDisplay] = useState<string | null>(null)
-  const [isDraggingFromTimeline, setIsDraggingFromTimeline] = useState(false)
-  const [dragGhost, setDragGhost] = useState<{dayIndex: number, hour: number, minute: number, height: number, category: string, title: string} | null>(null)
 
   // 리사이징 상태
   const [resizingBox, setResizingBox] = useState<PlanBox | null>(null)
@@ -62,6 +60,7 @@ export default function PlannerPage() {
   
   // 시간배지 상태
   const [timeBadge, setTimeBadge] = useState<{x: number, y: number, text: string} | null>(null)
+  const [ghostBox, setGhostBox] = useState<{dayIndex: number, hour: number, minute: number, height: number} | null>(null)
   
   // 무한 복제 모드 상태
   const [cloneSourceId, setCloneSourceId] = useState<number | null>(null)
@@ -73,41 +72,21 @@ export default function PlannerPage() {
   // 뷰 모드 상태
   const [viewMode, setViewMode] = useState<'edit' | 'compress' | 'print'>('edit')
 
-  // 점유된 슬롯 표시
-  const [occupiedSlots, setOccupiedSlots] = useState<{[key: string]: boolean}>({})
-
   // Refs
   const modalTitleEditRef = useRef<HTMLInputElement>(null)
 
   // 디버깅용 - placedBoxes 상태 모니터링
   useEffect(() => {
     console.log('📦 PlacedBoxes updated:', placedBoxes)
-    updateOccupiedSlots()
   }, [placedBoxes])
-  
-  // 디버깅용 - draggedData 상태 모니터링
+
+  // 자동저장 - planboxData나 placedBoxes가 변경될 때마다 저장
   useEffect(() => {
-    console.log('🎯 DraggedData state changed:', draggedData)
-  }, [draggedData])
-
-  // 점유된 슬롯 업데이트
-  const updateOccupiedSlots = () => {
-    const newOccupied: {[key: string]: boolean} = {}
-    placedBoxes.forEach(box => {
-      if (box.dayIndex !== undefined && box.startHour !== null) {
-        const startMinutes = box.startHour * 60 + (box.startMinute || 0)
-        const endMinutes = startMinutes + (box.height || 60)
-        
-        for (let min = startMinutes; min < endMinutes; min += 10) {
-          const key = `${box.dayIndex}-${Math.floor(min / 60)}-${min % 60}`
-          newOccupied[key] = true
-        }
-      }
-    })
-    setOccupiedSlots(newOccupied)
-  }
-
-  // 자동저장 - 106번 줄의 useEffect 제거 (602번 줄에 통합된 자동저장 로직 있음)
+    if (planboxData.length > 0 || placedBoxes.length > 0) {
+      console.log('💾 Auto-saving to localStorage')
+      saveToStorage()
+    }
+  }, [planboxData, placedBoxes])
 
   // 컴포넌트 마운트 시 localStorage에서 데이터 불러오기
   useEffect(() => {
@@ -115,89 +94,37 @@ export default function PlannerPage() {
     loadFromStorage()
   }, [])
 
-  // 투명한 드래그 이미지 생성
-  const createTransparentDragImage = (e: React.DragEvent) => {
-    const canvas = document.createElement('canvas')
-    canvas.width = 1
-    canvas.height = 1
-    const ctx = canvas.getContext('2d')
-    if (ctx) {
-      ctx.clearRect(0, 0, 1, 1)
-    }
-    e.dataTransfer.setDragImage(canvas, 0, 0)
-  }
-
   // 드래그앤드롭 이벤트 핸들러들
-  const handleDragStart = (e: React.DragEvent, planBox: PlanBox, isFromTimeline: boolean = false) => {
-    console.log('🚀 Drag started:', planBox.title, planBox.id, isFromTimeline ? 'from timeline' : 'from sidebar')
-    console.log('📊 PlanBox data:', planBox)
-    console.log('🎯 Event:', e)
-    
-    // 브라우저 호환성 체크
-    if (!e.dataTransfer) {
-      console.error('❌ dataTransfer not available!')
-      return
-    }
-    
+  const handleDragStart = (e: React.DragEvent, planBox: PlanBox) => {
+    console.log('🚀 Drag started:', planBox.title, planBox.id)
     setDraggedData(planBox)
-    setIsDraggingFromTimeline(isFromTimeline)
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', planBox.id.toString())
-    
-    // 투명한 드래그 이미지 설정
-    try {
-      createTransparentDragImage(e)
-    } catch (err) {
-      console.error('❌ Error creating transparent image:', err)
-    }
     
     // 드래그 중인 요소 스타일링
     const element = e.currentTarget as HTMLElement
     setDraggedElement(element)
-    
-    if (isFromTimeline) {
-      // 타임라인에서 드래그할 때 - 원본 박스를 숨김
-      element.classList.add('dragging')
-      // 드래그 시작 직후 원본 박스를 숨김 (visibility 사용)
-      requestAnimationFrame(() => {
-        element.style.visibility = 'hidden'
-      })
-    } else {
-      // 사이드바에서 드래그할 때
-      element.classList.add('dragging')
-      element.style.opacity = '0.5'
-      element.style.transform = 'scale(0.95)'
-    }
-    
-    console.log('✅ DragStart complete, setting draggedData to:', planBox)
+    element.style.opacity = '0.5'
+    element.style.transform = 'scale(0.95)'
   }
 
   const handleDragEnd = (e: React.DragEvent) => {
     console.log('✅ Drag ended')
     const element = e.currentTarget as HTMLElement
-    // 스타일 복원 - 빈 문자열로 초기화하여 CSS 스타일이 적용되도록
-    element.classList.remove('dragging')
-    element.style.opacity = ''
-    element.style.pointerEvents = ''  // pointer-events 복원 중요!
-    element.style.visibility = ''  // visibility 복원
-    element.style.transform = ''
-    element.style.zIndex = ''
-    
-    // 모든 드래그 관련 상태 초기화
+    element.style.opacity = '1'
+    element.style.transform = 'scale(1)'
     setDraggedElement(null)
     setDraggedData(null)
     setTimeBadge(null)
-    setDragGhost(null)  // 드래그 고스트 제거
-    setIsDraggingFromTimeline(false)
+    setGhostBox(null)
   }
 
   const handleSlotDragOver = (e: React.DragEvent) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     
-    console.log('🎯 Drag over slot, draggedData:', draggedData)
-    
     const slot = e.currentTarget as HTMLElement
+    slot.classList.add('drag-over')
     
     // 드래그 중인 위치 계산 및 시간배지 표시
     if (draggedData) {
@@ -205,20 +132,8 @@ export default function PlannerPage() {
       const hour = parseInt(slot.dataset.hour || '0')
       const rect = slot.getBoundingClientRect()
       const y = e.clientY - rect.top
-      const slotHeight = rect.height // 60px
-      
-      // 10분 단위로 정확한 스냅 계산
-      const minutePerPixel = 60 / slotHeight  // 1픽셀당 분
-      const calculatedMinute = y * minutePerPixel  // 계산된 분
-      let minute = Math.round(calculatedMinute / 10) * 10  // 10분 단위로 반올림
-      
-      // 분이 60 이상이면 조정
-      if (minute >= 60) {
-        minute = 50 // 최대 50분
-      }
-      if (minute < 0) {
-        minute = 0
-      }
+      const minuteOffset = Math.floor((y / rect.height) * 60)
+      const minute = Math.round(minuteOffset / 10) * 10 // 10분 단위로 스냅
       
       // 시간배지 위치와 텍스트 설정
       const startTimeText = formatTime(hour, minute)
@@ -233,16 +148,12 @@ export default function PlannerPage() {
         text: `${startTimeText} ~ ${endTimeText}`
       })
       
-      // 드래그 고스트 표시 (원본과 동일한 방식)
-      const duration = draggedData.durationHour * 60 + draggedData.durationMinute
-      
-      setDragGhost({
+      // 고스트 박스 표시
+      setGhostBox({
         dayIndex,
         hour,
-        minute: minute,
-        height: Math.min(duration, 480), // 최대 8시간(480분)으로 제한
-        category: draggedData.category,
-        title: draggedData.title
+        minute,
+        height: draggedData.durationHour * 60 + draggedData.durationMinute
       })
     }
   }
@@ -252,101 +163,46 @@ export default function PlannerPage() {
     slot.classList.remove('drag-over')
   }
 
-  // 사이드바로 드래그 되돌리기
-  const handleSidebarDragOver = (e: React.DragEvent) => {
-    if (isDraggingFromTimeline) {
-      e.preventDefault()
-      e.dataTransfer.dropEffect = 'move'
-    }
-  }
-
-  const handleSidebarDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    
-    if (isDraggingFromTimeline && draggedData) {
-      // 타임라인에서 사이드바로 되돌리기
-      setPlacedBoxes(prev => prev.filter(box => box.id !== draggedData.id))
-      
-      // 사이드바에 다시 추가 (이미 있으면 추가하지 않음)
-      if (!planboxData.find(box => box.id === draggedData.id)) {
-        const resetBox = {
-          ...draggedData,
-          startHour: null,
-          startMinute: null,
-          hasTimeSet: false,
-          dayIndex: undefined,
-          top: undefined,
-          height: undefined
-        }
-        setPlanboxData(prev => [...prev, resetBox])
-      }
-      
-      console.log('📥 Returned to sidebar:', draggedData.title)
-    }
-  }
-
   const handleSlotDrop = (e: React.DragEvent) => {
     console.log('📍 Drop event triggered')
     e.preventDefault()
-    e.stopPropagation()  // 이벤트 버블링 방지
-    
     const slot = e.currentTarget as HTMLElement
     slot.classList.remove('drag-over')
     
-    // 시간배지와 드래그 고스트 제거
+    // 시간배지와 고스트 박스 제거
     setTimeBadge(null)
-    setDragGhost(null)  // 드래그 고스트 제거
+    setGhostBox(null)
     
     if (!draggedData) {
       console.log('❌ No dragged data found')
       return
     }
     
+    const isFromTimeline = e.dataTransfer.getData('isFromTimeline') === 'true'
     const dayIndex = parseInt(slot.dataset.day || '0')
     const hour = parseInt(slot.dataset.hour || '0')
-    console.log('📊 Drop target:', { dayIndex, hour, isDraggingFromTimeline })
+    console.log('📊 Drop target:', { dayIndex, hour, isFromTimeline })
     
     // 드롭 위치 계산 (10분 단위로 정확히 스냅)
     const rect = slot.getBoundingClientRect()
     const y = e.clientY - rect.top
     const slotHeight = rect.height // 60px
     const minuteOffset = Math.floor((y / slotHeight) * 60)
-    let minute = Math.round(minuteOffset / 10) * 10 // 10분 단위로 반올림 스냅
+    const minute = Math.round(minuteOffset / 10) * 10 // 10분 단위로 반올림 스냅
     
-    // 분이 60을 넘어가면 다음 시간으로 조정
-    let adjustedHour = hour
-    if (minute >= 60) {
-      adjustedHour = hour + 1
-      minute = 0
-    }
-    // 분이 음수면 이전 시간으로 조정
-    if (minute < 0) {
-      adjustedHour = hour - 1
-      minute = 50
-    }
+    console.log(`📍 Dropped at Day ${dayIndex + 1}, ${hour}:${minute.toString().padStart(2, '0')}`)
     
-    console.log(`📍 Dropped at Day ${dayIndex + 1}, ${adjustedHour}:${minute.toString().padStart(2, '0')}`)
-    
-    // 플랜박스를 타임라인에 배치
+    // 플랜박스를 타임라인에 배치 (높이는 1픽셀 = 1분 기준)
     const durationInMinutes = draggedData.durationHour * 60 + draggedData.durationMinute
-    const snappedDuration = Math.round(durationInMinutes / 10) * 10
-    
+    const snappedDuration = Math.round(durationInMinutes / 10) * 10 // 10분 단위로 스냅
     let placedBox: PlanBox = {
       ...draggedData,
-      startHour: adjustedHour,
+      startHour: hour,
       startMinute: minute,
       hasTimeSet: true,
       dayIndex: dayIndex,
-      top: minute,
-      height: snappedDuration
-    }
-    
-    // 무한 복제 모드인 경우 새 ID 부여
-    if (isCloneMode && cloneSourceId === draggedData.id) {
-      placedBox = {
-        ...placedBox,
-        id: Date.now()
-      }
+      top: minute, // 시간 슬롯 내 분 오프셋
+      height: snappedDuration // 10분 단위로 스냅된 높이
     }
     
     console.log('🎯 Created placed box:', placedBox)
@@ -369,7 +225,7 @@ export default function PlannerPage() {
     }
     
     // 배치된 박스 목록에 추가 또는 업데이트
-    if (isDraggingFromTimeline) {
+    if (isFromTimeline) {
       // 타임라인에서 이동한 경우: 기존 박스 업데이트
       setPlacedBoxes(prev => {
         const filtered = prev.filter(box => box.id !== draggedData.id)
@@ -379,16 +235,15 @@ export default function PlannerPage() {
       })
     } else {
       // 사이드바에서 추가한 경우
-      if (!isCloneMode) {
-        // 일반 모드: 사이드바에서 제거
-        setPlanboxData(prev => prev.filter(box => box.id !== draggedData.id))
-      }
       setPlacedBoxes(prev => {
         const newBoxes = [...prev, placedBox]
         console.log('🔄 Added new box to timeline:', newBoxes)
         return newBoxes
       })
     }
+    
+    // 사이드바에서 제거 (필요에 따라)
+    // setPlanboxData(prev => prev.filter(box => box.id !== draggedData.id))
   }
 
   // 카테고리별 그라데이션 색상 반환
@@ -432,15 +287,15 @@ export default function PlannerPage() {
   }
 
   // 리사이징 이벤트 핸들러들
-  const handleResizeStart = (e: React.MouseEvent, box: PlanBox, direction: 'top' | 'bottom' = 'bottom') => {
+  const handleResizeStart = (e: React.MouseEvent, box: PlanBox) => {
     e.stopPropagation() // 박스 클릭 이벤트 방지
     setResizingBox(box)
-    setResizeDirection(direction) // 리사이즈 방향 설정 추가
     setResizeStartY(e.clientY)
     setResizeOriginalHeight(box.height || 60)
-    if (direction === 'top') {
-      setResizeOriginalTop(box.startMinute || 0)
-    }
+    
+    // 마우스 이벤트 리스너 추가
+    document.addEventListener('mousemove', handleResizeMove)
+    document.addEventListener('mouseup', handleResizeEnd)
   }
 
   // 리사이즈 핸들러를 useEffect로 관리해서 상태 참조 문제 해결
@@ -453,11 +308,9 @@ export default function PlannerPage() {
       const deltaY = e.clientY - resizeStartY
       
       if (resizeDirection === 'bottom') {
-        // 하단 리사이즈 - 더 부드러운 10분 단위 스냅
-        // 1픽셀 = 1분 비율로 계산
-        const pixelToMinute = 1
-        const rawDurationMinutes = resizeOriginalHeight + (deltaY * pixelToMinute)
-        const newDurationMinutes = Math.max(30, Math.round(rawDurationMinutes / 10) * 10) // 10분 단위로 스냅, 최소 30분
+        // 하단 리사이즈 - 10분 단위로 스냅
+        const newHeight = Math.max(30, resizeOriginalHeight + deltaY)
+        const newDurationMinutes = Math.round(newHeight / 10) * 10 // 10분 단위로 스냅
         
         // 시간배지 표시
         const startTimeText = formatTime(resizingBox.startHour, resizingBox.startMinute)
@@ -493,20 +346,17 @@ export default function PlannerPage() {
             } : box
         ))
       } else if (resizeDirection === 'top') {
-        // 상단 리사이즈 - 더 부드러운 10분 단위 스냅
-        // 1픽셀 = 1분 비율로 계산
-        const pixelToMinute = 1
-        const rawDurationMinutes = resizeOriginalHeight - (deltaY * pixelToMinute)
-        const newDurationMinutes = Math.max(30, Math.round(rawDurationMinutes / 10) * 10) // 10분 단위로 스냅, 최소 30분
+        // 상단 리사이즈 - 10분 단위로 스냅
+        const newTop = resizeOriginalTop + deltaY
+        const newHeight = resizeOriginalHeight - deltaY
         
-        // 시작 시간 조정 (현재 종료 시간에서 새로운 지속 시간을 뺀 값)
-        const currentEndMinutes = (resizingBox.startHour! * 60 + (resizingBox.startMinute || 0)) + 
-                                  (resizingBox.durationHour || 0) * 60 + (resizingBox.durationMinute || 30)
-        const newStartMinutes = Math.max(0, currentEndMinutes - newDurationMinutes)
-        const newStartHour = Math.floor(newStartMinutes / 60)
-        const newStartMinute = Math.round(newStartMinutes / 10) * 10 % 60 // 10분 단위 스냅
-        
-        if (newDurationMinutes >= 30) {
+        if (newHeight >= 30 && newTop >= 0) {
+          const snappedTop = Math.round(newTop / 10) * 10 // 10분 단위 스냅
+          const snappedHeight = Math.round(newHeight / 10) * 10
+          const totalMinutes = resizingBox.startHour! * 60 + snappedTop
+          const newStartHour = Math.floor(totalMinutes / 60)
+          const newStartMinute = totalMinutes % 60
+          const newDurationMinutes = Math.max(30, snappedHeight)
           
           // 시간배지 표시
           const startTimeText = formatTime(newStartHour, newStartMinute)
@@ -570,7 +420,7 @@ export default function PlannerPage() {
     }
   }, [resizingBox, resizeDirection, resizeStartY, resizeOriginalHeight, resizeOriginalTop])
 
-  // localStorage 저장 함수 (에러 처리 강화)
+  // localStorage 저장 함수
   const saveToStorage = () => {
     const dataToSave = {
       planboxData,
@@ -584,57 +434,28 @@ export default function PlannerPage() {
     }
     
     try {
-      const jsonString = JSON.stringify(dataToSave)
-      
-      // 용량 체크 (5MB 제한)
-      if (jsonString.length > 5 * 1024 * 1024) {
-        console.warn('⚠️ 저장 데이터가 5MB를 초과합니다. 일부 데이터를 정리해주세요.')
-        return
-      }
-      
-      localStorage.setItem('tplan-data', jsonString)
+      localStorage.setItem('tplan-data', JSON.stringify(dataToSave))
       console.log('데이터 자동저장 완료:', dataToSave.lastSaved)
     } catch (error) {
-      if (error instanceof DOMException && error.code === 22) {
-        console.error('💾 localStorage 용량 초과! 저장 공간을 확보해주세요.')
-        alert('저장 공간이 부족합니다. 브라우저 캐시를 정리해주세요.')
-      } else {
-        console.error('데이터 저장 실패:', error)
-      }
+      console.error('데이터 저장 실패:', error)
     }
   }
 
-  // localStorage 불러오기 함수 (에러 처리 강화)
+  // localStorage 불러오기 함수
   const loadFromStorage = () => {
     try {
       const savedData = localStorage.getItem('tplan-data')
       if (savedData) {
-        let data
-        try {
-          data = JSON.parse(savedData)
-        } catch (parseError) {
-          console.error('저장된 데이터 파싱 실패. 데이터가 손상되었을 수 있습니다:', parseError)
-          // 손상된 데이터 제거
-          localStorage.removeItem('tplan-data')
-          initializeDefaultData()
-          return
-        }
+        const data = JSON.parse(savedData)
         
-        // 데이터 유효성 검증
-        if (typeof data !== 'object' || data === null) {
-          console.warn('저장된 데이터 형식이 올바르지 않습니다.')
-          initializeDefaultData()
-          return
-        }
-        
-        // 저장된 데이터 복원 (안전한 기본값 제공)
-        setPlanboxData(Array.isArray(data.planboxData) ? data.planboxData : [])
-        setPlacedBoxes(Array.isArray(data.placedBoxes) ? data.placedBoxes : [])
-        setTripTitle(typeof data.tripTitle === 'string' ? data.tripTitle : '도쿄 여행')
-        setStartDate(typeof data.startDate === 'string' ? data.startDate : '2025-01-15')
-        setEndDate(typeof data.endDate === 'string' ? data.endDate : '2025-01-21')
-        setTotalDays(typeof data.totalDays === 'number' ? data.totalDays : 7)
-        setDayTimeRanges(typeof data.dayTimeRanges === 'object' ? data.dayTimeRanges : {})
+        // 저장된 데이터 복원
+        setPlanboxData(data.planboxData || [])
+        setPlacedBoxes(data.placedBoxes || [])
+        setTripTitle(data.tripTitle || '도쿄 여행')
+        setStartDate(data.startDate || '2025-01-15')
+        setEndDate(data.endDate || '2025-01-21')
+        setTotalDays(data.totalDays || 7)
+        setDayTimeRanges(data.dayTimeRanges || {})
         
         console.log('저장된 데이터 복원 완료:', data.lastSaved)
       } else {
@@ -1065,7 +886,6 @@ export default function PlannerPage() {
         </div>
       )}
       
-      
       {/* 헤더 - 프로토타입 완전 동일 */}
       <div className="header">
         <div className="header-logo">
@@ -1240,27 +1060,10 @@ export default function PlannerPage() {
       </div>
       
       {/* 메인 레이아웃 */}
-      <div className="main-layout" style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 240px',
-        height: 'calc(100vh - 56px)',
-        background: '#f8f9fa'
-      }}>
-        {/* 타임라인 영역 - 왼쪽 */}
-        <div className="timeline-area" style={{
-          background: '#fff',
-          overflow: 'auto',
-          position: 'relative',
-          margin: '16px',
-          borderRadius: '12px',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-        }}>
-          <div className="timeline-container" style={{
-            display: 'flex',
-            minWidth: 'fit-content',
-            position: 'relative',
-            paddingBottom: '20px'
-          }}>
+      <div className="main-layout">
+        {/* 타임라인 영역 */}
+        <div className="timeline-area">
+          <div className="timeline-container">
             {/* 시간 라벨 - ADAPTIVE에서는 숨김 */}
             <div className="time-labels" id="timeLabels"></div>
             
@@ -1354,45 +1157,32 @@ export default function PlannerPage() {
                             <div data-minute={50}></div>
                           </div>
                           
-                          {/* 드래그 고스트 - 해당 슬롯에 표시 */}
-                          {dragGhost && dragGhost.dayIndex === dayIndex && dragGhost.hour === hour && (
+                          {/* 고스트 박스 표시 */}
+                          {ghostBox && ghostBox.dayIndex === dayIndex && ghostBox.hour === hour && (
                             <div
-                              className={`drag-ghost ${dragGhost.category || 'activity'}`}
                               style={{
                                 position: 'absolute',
-                                top: `${dragGhost.minute}px`,
+                                top: `${Math.round(ghostBox.minute / 10) * 10}px`,
                                 left: '0',
                                 right: '0',
-                                height: `${dragGhost.height}px`,
-                                pointerEvents: 'none',
-                                opacity: 0.5,
-                                background: dragGhost.category === 'food' ? 'rgba(255, 193, 7, 0.3)' :
-                                           dragGhost.category === 'transport' ? 'rgba(40, 167, 69, 0.3)' :
-                                           dragGhost.category === 'activity' ? 'rgba(74, 144, 226, 0.3)' :
-                                           dragGhost.category === 'sightseeing' ? 'rgba(163, 116, 249, 0.3)' :
-                                           dragGhost.category === 'shopping' ? 'rgba(255, 107, 157, 0.3)' :
-                                           dragGhost.category === 'accommodation' ? 'rgba(173, 80, 210, 0.3)' :
-                                           'rgba(74, 144, 226, 0.3)',
-                                borderTop: `2px dashed ${getCategoryColor(dragGhost.category)}`,
-                                borderBottom: `2px dashed ${getCategoryColor(dragGhost.category)}`,
-                                borderLeft: `4px solid ${getCategoryColor(dragGhost.category)}`,
-                                borderRight: 'none',
+                                height: `${Math.round(ghostBox.height / 10) * 10}px`,
+                                background: 'rgba(102, 126, 234, 0.1)',
+                                border: '2px dashed #667eea',
                                 borderRadius: '0',
+                                pointerEvents: 'none',
                                 zIndex: 5,
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 fontSize: '12px',
-                                color: getCategoryColor(dragGhost.category),
-                                fontWeight: 'bold',
-                                gap: '2px'
+                                color: '#667eea',
+                                fontWeight: '600',
+                                gap: '4px'
                               }}
                             >
-                              <div>{dragGhost.title}</div>
-                              <div style={{fontSize: '10px'}}>
-                                {formatDuration(Math.floor(dragGhost.height / 60), dragGhost.height % 60)}
-                              </div>
+                              <div>{draggedData?.title}</div>
+                              <div style={{fontSize: '10px'}}>{formatDuration(Math.floor(ghostBox.height / 60), ghostBox.height % 60)}</div>
                             </div>
                           )}
                           
@@ -1405,33 +1195,28 @@ export default function PlannerPage() {
                               }
                               return matches
                             })
-                            .map(box => {
-                              // 같은 날의 다음 박스 찾기 (갭 표시용)
-                              const sameDayBoxes = placedBoxes
-                                .filter(b => b.dayIndex === dayIndex)
-                                .sort((a, b) => (a.startHour * 60 + (a.startMinute || 0)) - (b.startHour * 60 + (b.startMinute || 0)));
-                              
-                              const currentBoxIndex = sameDayBoxes.findIndex(b => b.id === box.id);
-                              const nextBox = sameDayBoxes[currentBoxIndex + 1];
-                              
-                              // 갭 계산
-                              let gapMinutes = 0;
-                              if (nextBox) {
-                                const currentEndTime = box.startHour * 60 + (box.startMinute || 0) + (box.height || 60);
-                                const nextStartTime = nextBox.startHour * 60 + (nextBox.startMinute || 0);
-                                gapMinutes = nextStartTime - currentEndTime;
-                              }
-                              
-                              return (
+                            .map(box => (
                               <div
                                 key={`placed-${box.id}-${box.dayIndex}-${box.startHour}`}
                                 className={`placed-box ${box.category}`}
                                 draggable={!resizingBox}
                                 onDragStart={(e) => {
-                                  handleDragStart(e, box, true)  // isFromTimeline = true
+                                  handleDragStart(e, box)
                                   e.dataTransfer.setData('isFromTimeline', 'true')
                                 }}
                                 onDragEnd={handleDragEnd}
+                                onMouseMove={(e) => {
+                                  if (!resizingBox) {
+                                    const rect = e.currentTarget.getBoundingClientRect()
+                                    const y = e.clientY - rect.top
+                                    
+                                    if (y <= 10 || y >= rect.height - 10) {
+                                      e.currentTarget.style.cursor = 'ns-resize'
+                                    } else {
+                                      e.currentTarget.style.cursor = 'move'
+                                    }
+                                  }
+                                }}
                                 onMouseDown={(e) => {
                                   const rect = e.currentTarget.getBoundingClientRect()
                                   const y = e.clientY - rect.top
@@ -1439,13 +1224,22 @@ export default function PlannerPage() {
                                   if (y <= 10) {
                                     // 상단 리사이즈
                                     e.preventDefault()
+                                    e.stopPropagation()
                                     console.log('🔄 Top resize started for:', box.title)
-                                    handleResizeStart(e, box, 'top')
+                                    setResizingBox(box)
+                                    setResizeDirection('top')
+                                    setResizeStartY(e.clientY)
+                                    setResizeOriginalHeight(box.height || 60)
+                                    setResizeOriginalTop(box.startMinute || 0)
                                   } else if (y >= rect.height - 10) {
                                     // 하단 리사이즈
                                     e.preventDefault()
+                                    e.stopPropagation()
                                     console.log('🔄 Bottom resize started for:', box.title)
-                                    handleResizeStart(e, box, 'bottom')
+                                    setResizingBox(box)
+                                    setResizeDirection('bottom')
+                                    setResizeStartY(e.clientY)
+                                    setResizeOriginalHeight(box.height || 60)
                                   }
                                 }}
                                 style={{
@@ -1454,38 +1248,21 @@ export default function PlannerPage() {
                                   left: '0',
                                   right: '0',
                                   height: `${Math.round((box.height || 60) / 10) * 10}px`, // 10분 단위 높이
-                                  background: box.category === 'food' ? 'linear-gradient(90deg, #FFF5E6 0%, #FFEFDD 100%)' :
-                                             box.category === 'transport' ? 'linear-gradient(90deg, #E6FFF5 0%, #DFFFF0 100%)' :
-                                             box.category === 'activity' ? 'linear-gradient(90deg, #EBF3FF 0%, #E1EDFF 100%)' :
-                                             box.category === 'sightseeing' ? 'linear-gradient(90deg, #F4EDFF 0%, #EDE4FF 100%)' :
-                                             box.category === 'shopping' ? 'linear-gradient(90deg, #FFEBF2 0%, #FFDFEA 100%)' :
-                                             box.category === 'accommodation' ? 'linear-gradient(90deg, #F0E9FF 0%, #E8DFFF 100%)' :
-                                             'linear-gradient(90deg, #F8F9FA 0%, #F1F3F5 100%)',
-                                  border: 'none',
-                                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.06)',
-                                  borderRadius: '0',
+                                  background: '#fff',
+                                  border: '1px solid #e9ecef',
+                                  borderLeft: `4px solid ${getCategoryColor(box.category)}`,
+                                  borderRadius: '0', // 각진 모서리
                                   padding: '4px',
                                   fontSize: '11px',
                                   color: '#000',
-                                  zIndex: resizingBox?.id === box.id ? 15 : 10,
-                                  cursor: resizingBox?.id === box.id ? 'ns-resize' : 'move',
-                                  transition: resizingBox?.id === box.id ? 'none' : 'height 0.2s ease',
+                                  zIndex: 10,
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  cursor: resizingBox ? 'ns-resize' : 'move',
                                   overflow: 'hidden',
                                   minHeight: '30px'
                                 }}
                                 onDoubleClick={() => editPlanBox(box)}
                               >
-                                {/* 왼쪽 카테고리 색상 라인 */}
-                                <div style={{
-                                  position: 'absolute',
-                                  left: 0,
-                                  top: 0,
-                                  bottom: 0,
-                                  width: '4px',
-                                  background: getCategoryColor(box.category),
-                                  zIndex: 1
-                                }} />
-                                
                                 {(() => {
                                   const duration = box.durationHour * 60 + box.durationMinute;
                                   const height = Math.max(box.height || 60, 40);
@@ -1500,28 +1277,6 @@ export default function PlannerPage() {
                                           <span style={{fontSize: '12px', fontWeight: '700', whiteSpace: 'nowrap', color: '#000'}}>{startTimeText}</span>
                                           <div style={{flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '10px', fontWeight: '500', color: '#000'}}>{box.title}</div>
                                         </div>
-                                        {/* 더보기 버튼 */}
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            editPlanBox(box)
-                                          }}
-                                          style={{
-                                            position: 'absolute',
-                                            top: '2px',
-                                            right: '2px',
-                                            background: 'transparent',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            padding: '2px',
-                                            fontSize: '14px',
-                                            color: '#666',
-                                            lineHeight: 1
-                                          }}
-                                          title="편집"
-                                        >
-                                          ⋮
-                                        </button>
                                       </div>
                                     );
                                   } else if (duration >= 50 && duration <= 70) {
@@ -1532,28 +1287,6 @@ export default function PlannerPage() {
                                           <span style={{fontSize: '13px', fontWeight: '600', color: '#000'}}>{startTimeText}</span>
                                           <div style={{flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '12px', lineHeight: '1.2', color: '#000'}}>{box.title}</div>
                                         </div>
-                                        {/* 더보기 버튼 */}
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            editPlanBox(box)
-                                          }}
-                                          style={{
-                                            position: 'absolute',
-                                            top: '2px',
-                                            right: '2px',
-                                            background: 'transparent',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            padding: '2px',
-                                            fontSize: '14px',
-                                            color: '#666',
-                                            lineHeight: 1
-                                          }}
-                                          title="편집"
-                                        >
-                                          ⋮
-                                        </button>
                                         
                                         <div style={{textAlign: 'right', marginBottom: '2px'}}>
                                           <span style={{fontSize: '10px', color: '#666', background: 'rgba(0,0,0,0.1)', padding: '1px 4px', borderRadius: '6px'}}>{durationText}</span>
@@ -1586,28 +1319,6 @@ export default function PlannerPage() {
                                           <span style={{fontSize: '14px', fontWeight: '600', color: '#000'}}>{startTimeText}</span>
                                           <div style={{flex: 1, lineHeight: '1.2', fontSize: '13px', fontWeight: '700', color: '#000'}}>{box.title}</div>
                                         </div>
-                                        {/* 더보기 버튼 */}
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            editPlanBox(box)
-                                          }}
-                                          style={{
-                                            position: 'absolute',
-                                            top: '2px',
-                                            right: '2px',
-                                            background: 'transparent',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            padding: '2px',
-                                            fontSize: '14px',
-                                            color: '#666',
-                                            lineHeight: 1
-                                          }}
-                                          title="편집"
-                                        >
-                                          ⋮
-                                        </button>
                                         
                                         <div style={{textAlign: 'right', marginBottom: '3px'}}>
                                           <span style={{fontSize: '10px', color: '#666', background: 'rgba(0,0,0,0.1)', padding: '1px 4px', borderRadius: '6px'}}>{durationText}</span>
@@ -1637,36 +1348,6 @@ export default function PlannerPage() {
                                   }
                                 })()}
                                 
-                                {/* 리사이즈 핸들 - 상단 */}
-                                <div
-                                  className="resize-handle resize-handle-top"
-                                  style={{
-                                    position: 'absolute',
-                                    top: '-2px',
-                                    left: '0',
-                                    right: '0',
-                                    height: '6px',
-                                    cursor: 'ns-resize',
-                                    background: 'transparent',
-                                    zIndex: 15
-                                  }}
-                                  onMouseDown={(e) => {
-                                    e.preventDefault()
-                                    handleResizeStart(e, box, 'top')
-                                  }}
-                                >
-                                  <div style={{
-                                    position: 'absolute',
-                                    top: '1px',
-                                    left: '50%',
-                                    transform: 'translateX(-50%)',
-                                    width: '20px',
-                                    height: '3px',
-                                    background: 'rgba(0,0,0,0.3)',
-                                    borderRadius: '2px'
-                                  }} />
-                                </div>
-                                
                                 {/* 리사이즈 핸들 - 하단 */}
                                 <div
                                   className="resize-handle resize-handle-bottom"
@@ -1693,36 +1374,9 @@ export default function PlannerPage() {
                                     borderRadius: '2px'
                                   }} />
                                 </div>
-                              
-                              {/* 갭 표시 - placed-box 내부 */}
-                              {gapMinutes > 0 && nextBox && (
-                                <div style={{
-                                  position: 'absolute',
-                                  top: `${Math.round((box.startMinute || 0) / 10) * 10 + Math.round((box.height || 60) / 10) * 10}px`,
-                                  left: '0',
-                                  right: '0',
-                                  height: `${gapMinutes}px`,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  pointerEvents: 'none',
-                                  zIndex: 5
-                                }}>
-                                  <div style={{
-                                    background: 'rgba(0, 0, 0, 0.03)',
-                                    padding: '2px 8px',
-                                    borderRadius: '10px',
-                                    fontSize: '10px',
-                                    color: '#999',
-                                    border: '1px dashed #ddd'
-                                  }}>
-                                    ~{gapMinutes >= 60 ? `${Math.floor(gapMinutes / 60)}시간 ${gapMinutes % 60 > 0 ? `${gapMinutes % 60}분` : ''}` : `${gapMinutes}분`}~
-                                  </div>
-                                </div>
-                              )}
                               </div>
-                            )
-                          })}
+                            ))
+                          }
                         </div>
                       ))}
                     </div>
@@ -1733,17 +1387,8 @@ export default function PlannerPage() {
           </div>
         </div>
         
-        {/* 플랜박스 영역 - 오른쪽 */}
-        <div className="planbox-area" style={{
-          background: '#fff',
-          margin: '12px 12px 12px 0',
-          borderRadius: '8px',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-          height: 'calc(100vh - 80px)',
-          overflow: 'hidden'
-        }}>
+        {/* 플랜박스 영역 */}
+        <div className="planbox-area">
           {/* 플랜박스 생성 영역 */}
           <div 
             className="creation-zone" 
@@ -1770,7 +1415,7 @@ export default function PlannerPage() {
                   padding: '10px 8px',
                   border: 'none',
                   borderRadius: '12px',
-                  background: '#00D084',
+                  background: '#4CAF50',
                   color: 'white',
                   cursor: 'pointer',
                   fontSize: '13px',
@@ -1972,11 +1617,7 @@ export default function PlannerPage() {
           </div>
           
           {/* 플랜박스 목록 */}
-          <div className="planbox-list" id="planboxList" style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '12px'
-          }}>
+          <div className="planbox-list" id="planboxList">
             {filteredPlanBoxes.length === 0 ? (
               <div style={{padding: '20px', textAlign: 'center', color: '#6c757d', fontSize: '13px'}}>
                 선택한 카테고리의 플랜박스가 없습니다.
@@ -1989,14 +1630,9 @@ export default function PlannerPage() {
                   draggable={true}
                   data-id={planBox.id}
                   style={{
-                    background: getCategoryGradient(planBox.category),
-                    border: cloneSourceId === planBox.id ? '2px dashed #667eea' : '2px solid #e9ecef',
-                    marginBottom: '10px',
-                    padding: '8px',
-                    cursor: 'move',
-                    position: 'relative',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    borderRadius: '0',
+                    borderLeft: `5px solid ${getCategoryColor(planBox.category)}`,
+                    background: cloneSourceId === planBox.id ? 'rgba(102, 126, 234, 0.05)' : undefined,
+                    border: cloneSourceId === planBox.id ? '2px dashed #667eea' : undefined,
                     opacity: draggedData?.id === planBox.id ? 0.5 : 1
                   }}
                   onDragStart={(e) => {
@@ -2016,17 +1652,25 @@ export default function PlannerPage() {
                   }}
                   onDragEnd={handleDragEnd}
                   onDoubleClick={() => editPlanBox(planBox)}
+                  onMouseEnter={(e) => {
+                    const controls = e.currentTarget.querySelector('.planbox-controls') as HTMLElement
+                    if (controls) controls.style.display = 'flex'
+                  }}
+                  onMouseLeave={(e) => {
+                    const controls = e.currentTarget.querySelector('.planbox-controls') as HTMLElement
+                    if (controls) controls.style.display = 'none'
+                  }}
                 >
                   <div style={{position: 'relative', padding: '4px 4px 20px 4px', height: '100%', display: 'flex', flexDirection: 'column'}}>
                     {/* 상단: 시간 + 제목 */}
                     <div style={{display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '3px'}}>
-                      <span className="planbox-time" style={{fontSize: '12px', color: '#fff', flexShrink: 0}}>
+                      <span className="planbox-time" style={{fontSize: '12px', color: '#000', flexShrink: 0}}>
                         {planBox.startHour !== null && planBox.startMinute !== null && planBox.hasTimeSet ? 
                           formatTime(planBox.startHour, planBox.startMinute) : 
                           '시간 미설정'
                         }
                       </span>
-                      <div className="planbox-title" style={{flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '13px', lineHeight: '1.2', color: '#fff', fontWeight: '600'}}>
+                      <div className="planbox-title" style={{flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '13px', lineHeight: '1.2', color: '#000'}}>
                         {planBox.title}
                       </div>
                     </div>
@@ -2035,22 +1679,15 @@ export default function PlannerPage() {
                     <div style={{flex: 1}}>
                       {/* 메모 (있을 경우만 표시) */}
                       {planBox.memo && (
-                        <div className="planbox-memo" style={{fontSize: '11px', color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px'}}>
+                        <div className="planbox-memo" style={{fontSize: '11px', color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px'}}>
                           📝 {planBox.memo}
                         </div>
                       )}
                       
                       {/* 위치 (있을 경우만 표시) */}
                       {planBox.location && (
-                        <div className="planbox-location" style={{fontSize: '11px', color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px'}}>
+                        <div className="planbox-location" style={{fontSize: '11px', color: '#000', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
                           📍 {planBox.location}
-                        </div>
-                      )}
-                      
-                      {/* 비용 (있을 경우만 표시) */}
-                      {planBox.cost && (
-                        <div className="planbox-cost" style={{fontSize: '11px', color: 'rgba(255,255,255,0.9)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
-                          💰 {planBox.cost}
                         </div>
                       )}
                     </div>
@@ -2059,8 +1696,8 @@ export default function PlannerPage() {
                     <div style={{marginTop: 'auto', marginBottom: '8px'}}>
                       <span className="planbox-duration" style={{
                         fontSize: '10px', 
-                        color: 'rgba(255,255,255,0.9)', 
-                        background: 'rgba(255,255,255,0.2)', 
+                        color: '#000', 
+                        background: 'rgba(0,0,0,0.05)', 
                         padding: '1px 4px', 
                         borderRadius: '4px'
                       }}>
@@ -2068,55 +1705,75 @@ export default function PlannerPage() {
                       </span>
                     </div>
                     
-                    {/* 버튼 그룹 - 오른쪽 상단 */}
-                    <div style={{
-                      position: 'absolute',
-                      top: '4px',
-                      right: '4px',
-                      display: 'flex',
-                      gap: '4px'
-                    }}>
-                      {/* 편집 버튼 */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          editPlanBox(planBox)
-                        }}
-                        style={{
-                          background: 'rgba(255,255,255,0.2)',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '3px',
-                          padding: '2px 6px',
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                        title="편집"
-                      >
-                        ✏️
-                      </button>
-                      
-                      {/* 복제 버튼 */}
+                    {/* 컨트롤 버튼들 - 오른쪽 하단 */}
+                    <div className="planbox-controls" style={{position: 'absolute', bottom: '4px', right: '3px', display: 'none', gap: '2px'}}>
                       <button 
-                        className={`clone-btn ${cloneSourceId === planBox.id ? 'active' : ''}`}
+                        className={`planbox-control clone ${cloneSourceId === planBox.id ? 'active' : ''}`}
                         onClick={(e) => {
                           e.stopPropagation()
                           toggleCloneMode(planBox.id)
                         }}
+                        title="복사 모드"
                         style={{
-                          background: cloneSourceId === planBox.id ? '#fff' : 'rgba(255,255,255,0.2)',
-                          color: cloneSourceId === planBox.id ? getCategoryColor(planBox.category) : '#fff',
+                          width: '20px',
+                          height: '20px',
+                          background: cloneSourceId === planBox.id ? '#667eea' : 'transparent',
+                          color: cloneSourceId === planBox.id ? 'white' : '#999',
                           border: 'none',
                           borderRadius: '3px',
-                          padding: '2px 6px',
-                          fontSize: '10px',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: 0,
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (cloneSourceId !== planBox.id) {
+                            e.currentTarget.style.background = 'rgba(102, 126, 234, 0.1)'
+                            e.currentTarget.style.color = '#667eea'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (cloneSourceId !== planBox.id) {
+                            e.currentTarget.style.background = 'transparent'
+                            e.currentTarget.style.color = '#999'
+                          }
                         }}
                       >
-                        {cloneSourceId === planBox.id ? '복제중' : '복제'}
+                        <span className="material-icons" style={{fontSize: '14px'}}>content_copy</span>
+                      </button>
+                      <button 
+                        className="planbox-control view"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          editPlanBox(planBox)
+                        }}
+                        title="편집"
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                          background: 'transparent',
+                          color: '#999',
+                          border: 'none',
+                          borderRadius: '3px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: 0,
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(102, 126, 234, 0.1)'
+                          e.currentTarget.style.color = '#667eea'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent'
+                          e.currentTarget.style.color = '#999'
+                        }}
+                      >
+                        <span className="material-icons" style={{fontSize: '14px'}}>edit</span>
                       </button>
                     </div>
                   </div>
@@ -2238,9 +1895,12 @@ export default function PlannerPage() {
                       onChange={(e) => setCurrentPlanBox({...currentPlanBox, startMinute: parseInt(e.target.value), hasTimeSet: true})}
                       style={{width: '80px', padding: '7px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px'}}
                     >
-                      {[0, 10, 20, 30, 40, 50].map(minute => (
-                        <option key={minute} value={minute}>{String(minute).padStart(2, '0')}분</option>
-                      ))}
+                      <option value={0}>00분</option>
+                      <option value={10}>10분</option>
+                      <option value={20}>20분</option>
+                      <option value={30}>30분</option>
+                      <option value={40}>40분</option>
+                      <option value={50}>50분</option>
                     </select>
                   </div>
                 </div>
@@ -2265,9 +1925,12 @@ export default function PlannerPage() {
                       onChange={(e) => setCurrentPlanBox({...currentPlanBox, durationMinute: parseInt(e.target.value)})}
                       style={{width: '80px', padding: '7px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px'}}
                     >
-                      {[0, 10, 20, 30, 40, 50].map(minute => (
-                        <option key={minute} value={minute}>{minute}분</option>
-                      ))}
+                      <option value={0}>0분</option>
+                      <option value={10}>10분</option>
+                      <option value={20}>20분</option>
+                      <option value={30}>30분</option>
+                      <option value={40}>40분</option>
+                      <option value={50}>50분</option>
                     </select>
                   </div>
                 </div>
