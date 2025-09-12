@@ -14,10 +14,13 @@
     "test:debug": "playwright test --debug",
     "test:e2e": "playwright test",
     "claude:start": "node .claude/multi-session-sync.js handover",
-    "claude:save": "node .claude/multi-session-sync.js save",
+    "claude:save": "node .claude/multi-session-sync.js save", 
     "claude:sync": "node .claude/multi-session-sync.js sync",
     "claude:supabase": "node .claude/supabase-session-sync.js handover",
-    "claude:history": "node .claude/supabase-session-sync.js history"
+    "claude:history": "node .claude/supabase-session-sync.js history",
+    "claude:end": "node .claude/auto-end-session.js",
+    "c:s": "node .claude/simple-commands.js s",
+    "c:e": "node .claude/simple-commands.js e"
   },
   "repository": {
     "type": "git",
