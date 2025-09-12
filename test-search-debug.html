@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카카오 장소 검색 디버깅</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        #searchInput {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        #searchInput:focus {
+            border-color: #3b82f6;
+            outline: none;
+        }
+        #searchResults {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #3b82f6;
+            border-radius: 5px;
+            margin-top: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+        }
+        #searchResults.show {
+            display: block;
+        }
+        .search-item {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .search-item:hover {
+            background: #f0f9ff;
+        }
+        .search-item:last-child {
+            border-bottom: none;
+        }
+        .place-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        .place-address {
+            font-size: 14px;
+            color: #666;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .debug-info h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .button-group {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background: #3b82f6;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,.1);
+            border-radius: 50%;
+            border-top-color: #3b82f6;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 카카오 장소 검색 디버깅</h1>
+        
+        <div id="status" class="status info">
+            카카오 맵 API 로딩 중...
+        </div>
+        
+        <div class="search-container">
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="장소명이나 주소를 입력하세요 (예: 강남역, 스타벅스)"
+                disabled
+            >
+            <div id="searchResults"></div>
+        </div>
+        
+        <div class="button-group">
+            <button onclick="testSearch('강남역')" id="test1" disabled>테스트: 강남역</button>
+            <button onclick="testSearch('스타벅스 강남')" id="test2" disabled>테스트: 스타벅스 강남</button>
+            <button onclick="testSearch('서울특별시청')" id="test3" disabled>테스트: 서울특별시청</button>
+            <button onclick="clearResults()">결과 지우기</button>
+        </div>
+        
+        <div class="debug-info">
+            <h3>디버그 정보</h3>
+            <div id="debugInfo">대기 중...</div>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d0d67d94afae47e0ab9c29b0e6aea5cf&libraries=services"></script>
+    <script>
+        let searchTimeout;
+        let ps = null;
+        let isSearching = false;
+        
+        // 디버그 로그 함수
+        function log(message, type = 'info') {
+            const debugInfo = document.getElementById('debugInfo');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : type === 'success' ? 'green' : '#333';
+            debugInfo.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        // 상태 업데이트
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.textContent = message;
+        }
+        
+        // 카카오 맵 초기화 확인
+        function checkKakaoMaps() {
+            log('카카오 맵 API 체크 시작...');
+            
+            if (typeof kakao === 'undefined') {
+                log('kakao 객체가 정의되지 않음', 'error');
+                updateStatus('카카오 맵 API 로드 실패: kakao 객체 없음', 'error');
+                return false;
+            }
+            
+            log('kakao 객체 확인: OK', 'success');
+            
+            if (!kakao.maps) {
+                log('kakao.maps가 정의되지 않음', 'error');
+                updateStatus('카카오 맵 API 로드 실패: maps 객체 없음', 'error');
+                return false;
+            }
+            
+            log('kakao.maps 확인: OK', 'success');
+            
+            if (!kakao.maps.services) {
+                log('kakao.maps.services가 정의되지 않음', 'error');
+                updateStatus('카카오 맵 API 로드 실패: services 라이브러리 없음', 'error');
+                return false;
+            }
+            
+            log('kakao.maps.services 확인: OK', 'success');
+            
+            if (!kakao.maps.services.Places) {
+                log('kakao.maps.services.Places가 정의되지 않음', 'error');
+                updateStatus('카카오 맵 API 로드 실패: Places 서비스 없음', 'error');
+                return false;
+            }
+            
+            log('kakao.maps.services.Places 확인: OK', 'success');
+            
+            // Places 서비스 초기화
+            try {
+                ps = new kakao.maps.services.Places();
+                log('Places 서비스 초기화 성공', 'success');
+                updateStatus('카카오 맵 API 로드 완료! 검색을 시작하세요.', 'success');
+                
+                // 입력 필드와 버튼 활성화
+                document.getElementById('searchInput').disabled = false;
+                document.getElementById('test1').disabled = false;
+                document.getElementById('test2').disabled = false;
+                document.getElementById('test3').disabled = false;
+                
+                return true;
+            } catch (error) {
+                log(`Places 서비스 초기화 실패: ${error.message}`, 'error');
+                updateStatus(`Places 서비스 초기화 실패: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // 검색 함수
+        function searchPlaces(query) {
+            if (!query || query.length < 2) {
+                log('검색어가 너무 짧음 (2글자 이상 필요)');
+                hideResults();
+                return;
+            }
+            
+            if (!ps) {
+                log('Places 서비스가 초기화되지 않음', 'error');
+                updateStatus('검색 서비스가 준비되지 않았습니다', 'error');
+                return;
+            }
+            
+            if (isSearching) {
+                log('이미 검색 중...');
+                return;
+            }
+            
+            log(`검색 시작: "${query}"`);
+            isSearching = true;
+            updateStatus(`"${query}" 검색 중...`, 'info');
+            
+            try {
+                ps.keywordSearch(query, function(data, status, pagination) {
+                    isSearching = false;
+                    
+                    log(`검색 콜백 호출됨. 상태: ${status}`);
+                    
+                    if (status === kakao.maps.services.Status.OK) {
+                        log(`검색 성공! 결과 수: ${data.length}`, 'success');
+                        updateStatus(`검색 완료: ${data.length}개 결과`, 'success');
+                        displayResults(data.slice(0, 5));
+                    } else if (status === kakao.maps.services.Status.ZERO_RESULT) {
+                        log('검색 결과 없음');
+                        updateStatus('검색 결과가 없습니다', 'info');
+                        hideResults();
+                    } else if (status === kakao.maps.services.Status.ERROR) {
+                        log('검색 중 오류 발생', 'error');
+                        updateStatus('검색 중 오류가 발생했습니다', 'error');
+                        hideResults();
+                    } else {
+                        log(`알 수 없는 상태: ${status}`, 'error');
+                        updateStatus(`검색 실패: ${status}`, 'error');
+                        hideResults();
+                    }
+                });
+            } catch (error) {
+                isSearching = false;
+                log(`검색 예외 발생: ${error.message}`, 'error');
+                updateStatus(`검색 오류: ${error.message}`, 'error');
+            }
+        }
+        
+        // 검색 결과 표시
+        function displayResults(places) {
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = '';
+            
+            if (places.length === 0) {
+                hideResults();
+                return;
+            }
+            
+            places.forEach((place, index) => {
+                const item = document.createElement('div');
+                item.className = 'search-item';
+                item.innerHTML = `
+                    <div class="place-name">${place.place_name}</div>
+                    <div class="place-address">${place.road_address_name || place.address_name}</div>
+                `;
+                item.onclick = function() {
+                    selectPlace(place);
+                };
+                resultsDiv.appendChild(item);
+                
+                log(`결과 ${index + 1}: ${place.place_name} - ${place.address_name}`);
+            });
+            
+            resultsDiv.classList.add('show');
+        }
+        
+        // 결과 숨기기
+        function hideResults() {
+            document.getElementById('searchResults').classList.remove('show');
+        }
+        
+        // 장소 선택
+        function selectPlace(place) {
+            log(`선택된 장소: ${place.place_name}`, 'success');
+            document.getElementById('searchInput').value = place.place_name;
+            hideResults();
+            updateStatus(`선택됨: ${place.place_name}`, 'success');
+        }
+        
+        // 결과 지우기
+        function clearResults() {
+            document.getElementById('searchInput').value = '';
+            hideResults();
+            updateStatus('검색어를 입력하세요', 'info');
+            log('검색 결과 초기화');
+        }
+        
+        // 테스트 검색
+        function testSearch(query) {
+            document.getElementById('searchInput').value = query;
+            searchPlaces(query);
+        }
+        
+        // 입력 이벤트 처리
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const query = e.target.value;
+            
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            
+            if (query.length >= 2) {
+                searchTimeout = setTimeout(() => {
+                    searchPlaces(query);
+                }, 300);
+            } else {
+                hideResults();
+            }
+        });
+        
+        // 페이지 로드 시 초기화
+        window.onload = function() {
+            log('페이지 로드 완료');
+            
+            // 카카오 맵 로드 대기
+            let checkCount = 0;
+            const checkInterval = setInterval(function() {
+                checkCount++;
+                log(`카카오 맵 체크 시도 ${checkCount}회`);
+                
+                if (checkKakaoMaps()) {
+                    clearInterval(checkInterval);
+                    log('초기화 완료!', 'success');
+                } else if (checkCount > 30) {
+                    clearInterval(checkInterval);
+                    log('카카오 맵 로드 타임아웃 (3초)', 'error');
+                    updateStatus('카카오 맵 API 로드 실패 (타임아웃)', 'error');
+                }
+            }, 100);
+        };
+    </script>
+</body>
+</html>

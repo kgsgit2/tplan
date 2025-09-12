@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>카카오 맵 API 테스트</title>
+</head>
+<body>
+    <h1>카카오 맵 API 테스트 페이지</h1>
+    <div id="status">로딩 중...</div>
+    <div id="map" style="width:500px;height:400px;margin-top:20px;"></div>
+    
+    <script>
+        console.log('카카오 맵 API 테스트 시작');
+        
+        // 스크립트 동적 로드
+        const script = document.createElement('script');
+        script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=d0d67d94afae47e0ab9c29b0e6aea5cf&libraries=services';
+        
+        script.onload = function() {
+            console.log('스크립트 로드 성공');
+            const status = document.getElementById('status');
+            
+            if (window.kakao && window.kakao.maps) {
+                status.innerHTML = '✅ 카카오 맵 API 로드 성공!<br>';
+                status.innerHTML += 'kakao 객체: ' + (!!window.kakao) + '<br>';
+                status.innerHTML += 'kakao.maps 객체: ' + (!!window.kakao.maps) + '<br>';
+                status.innerHTML += 'kakao.maps.services 객체: ' + (!!window.kakao.maps.services) + '<br>';
+                
+                // 지도 생성 테스트
+                try {
+                    const container = document.getElementById('map');
+                    const options = {
+                        center: new kakao.maps.LatLng(37.5665, 126.9780),
+                        level: 3
+                    };
+                    const map = new kakao.maps.Map(container, options);
+                    status.innerHTML += '✅ 지도 생성 성공!<br>';
+                    
+                    // 장소 검색 테스트
+                    const ps = new kakao.maps.services.Places();
+                    ps.keywordSearch('강남역', function(data, status) {
+                        if (status === kakao.maps.services.Status.OK) {
+                            document.getElementById('status').innerHTML += '✅ 장소 검색 API 작동 확인! 검색 결과: ' + data.length + '개';
+                        } else {
+                            document.getElementById('status').innerHTML += '❌ 장소 검색 실패: ' + status;
+                        }
+                    });
+                } catch (e) {
+                    status.innerHTML += '❌ 지도 생성 실패: ' + e.message;
+                }
+            } else {
+                status.innerHTML = '❌ 카카오 맵 객체를 찾을 수 없습니다';
+            }
+        };
+        
+        script.onerror = function(e) {
+            console.error('스크립트 로드 실패', e);
+            document.getElementById('status').innerHTML = '❌ 스크립트 로드 실패!<br>콘솔을 확인하세요.';
+        };
+        
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import PlanBoxModal from './PlanBoxModal'
 
 // 카카오 맵 API 타입 정의
 declare global {
@@ -22,20 +21,10 @@ interface PlanBox {
   cost: string
   memo: string
   location?: string
-  placeName?: string
-  address?: string
-  phoneNumber?: string
   hasTimeSet: boolean
   dayIndex?: number
   top?: number
   height?: number
-  transportMode?: 'car' | 'public' | 'walk'
-  routeInfo?: {
-    origin: string
-    destination: string
-    distance: number
-    duration: number
-  }
 }
 
 interface TimeRange {
@@ -636,8 +625,8 @@ export default function PlannerPage() {
   }, [resizingBox, resizeDirection, resizeStartY, resizeOriginalHeight, resizeOriginalTop])
 
   // localStorage 저장 함수 (에러 처리 강화)
-  const saveToStorage = (customData?: any) => {
-    const dataToSave = customData || {
+  const saveToStorage = () => {
+    const dataToSave = {
       planboxData,
       placedBoxes,
       tripTitle,
@@ -658,10 +647,7 @@ export default function PlannerPage() {
       }
       
       localStorage.setItem('tplan-data', jsonString)
-      console.log('💾 데이터 저장 완료:', dataToSave.lastSaved, {
-        planboxCount: dataToSave.planboxData?.length || 0,
-        placedBoxCount: dataToSave.placedBoxes?.length || 0
-      })
+      console.log('데이터 자동저장 완료:', dataToSave.lastSaved)
     } catch (error) {
       if (error instanceof DOMException && error.code === 22) {
         console.error('💾 localStorage 용량 초과! 저장 공간을 확보해주세요.')
@@ -1061,52 +1047,19 @@ export default function PlannerPage() {
   }
 
   // 플랜박스 저장
-  function savePlanBox(boxToSave?: PlanBox) {
-    const box = boxToSave || currentPlanBox
-    if (!box) return
-    
-    console.log('💾 PlanBox 저장 시작:', box)
+  function savePlanBox() {
+    if (!currentPlanBox) return
     
     if (isEditing) {
-      // 기존 박스 업데이트
-      setPlanboxData(prev => {
-        const updated = prev.map(item => 
-          item.id === box.id ? box : item
-        )
-        console.log('💾 PlanboxData 업데이트:', updated)
-        return updated
-      })
-      
-      // 배치된 박스도 업데이트 (위치 정보 유지)
-      setPlacedBoxes(prev => {
-        const updated = prev.map(item => {
-          if (item.id === box.id) {
-            // 위치 정보는 유지하고 나머지 데이터만 업데이트
-            return {
-              ...box,
-              dayIndex: item.dayIndex,
-              top: item.top,
-              height: item.height
-            }
-          }
-          return item
-        })
-        console.log('💾 PlacedBoxes 업데이트:', updated)
-        return updated
-      })
+      setPlanboxData(prev => prev.map(box => 
+        box.id === currentPlanBox.id ? currentPlanBox : box
+      ))
+      setPlacedBoxes(prev => prev.map(box => 
+        box.id === currentPlanBox.id ? currentPlanBox : box
+      ))
     } else {
-      // 새 박스 추가
-      setPlanboxData(prev => {
-        const updated = [...prev, box]
-        console.log('💾 PlanboxData 추가:', updated)
-        return updated
-      })
+      setPlanboxData(prev => [...prev, currentPlanBox])
     }
-    
-    // 모달을 닫기 전에 저장
-    setTimeout(() => {
-      saveToStorage()
-    }, 100)
     
     hideModal()
   }
@@ -1305,6 +1258,7 @@ export default function PlannerPage() {
         )}
         
         {/* 뷰 모드 토글 */}
+
         <div className="header-controls" style={{
           display: 'flex',
           alignItems: 'center',
@@ -1455,6 +1409,7 @@ export default function PlannerPage() {
             <div className="day-columns" id="dayColumns">
               {Array.from({length: totalDays}, (_, dayIndex) => (
                 <div key={dayIndex} className="flex">
+                  {/* 개별 타임바 */}
                   <div className="day-timebar" style={{
                     width: '30px',  // 35px에서 30px로 살짝 줄임
                     background: 'linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%)',
@@ -1506,6 +1461,8 @@ export default function PlannerPage() {
                       </div>
                     ))}
                   </div>
+                  
+                  {/* 날짜 컬럼 */}
                   <div className="day-column">
                     <div className="day-header">
                       Day {dayIndex + 1}
@@ -2371,16 +2328,484 @@ export default function PlannerPage() {
       </div>
 
       {/* 플랜박스 상세 모달 */}
-      <PlanBoxModal
-        isOpen={isModalOpen}
-        planBox={currentPlanBox}
-        placedBoxes={placedBoxes}
-        onClose={hideModal}
-        onSave={(updatedBox) => {
-          console.log('💾 모달에서 저장 요청:', updatedBox)
-          savePlanBox(updatedBox)
-        }}
-      />
+      {isModalOpen && currentPlanBox && (
+        <div className="modal show" id="planboxModal">
+          <div className="modal-content" style={{maxWidth: '550px', display: 'flex', flexDirection: 'column', padding: 0}}>
+            {/* 모달 헤더 */}
+            <div style={{
+              padding: '18px 24px',
+              borderBottom: '1px solid #e0e0e0',
+              background: 'linear-gradient(to bottom, #fff, #fafafa)'
+            }}>
+              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '10px', flex: 1}}>
+                  {modalTitleEditing ? (
+                    <input 
+                      ref={modalTitleEditRef}
+                      type="text" 
+                      value={currentPlanBox.title}
+                      onChange={(e) => setCurrentPlanBox({...currentPlanBox, title: e.target.value})}
+                      onBlur={finishTitleEdit}
+                      onKeyDown={handleTitleEditKey}
+                      style={{
+                        fontSize: '22px',
+                        fontWeight: '600',
+                        border: 'none',
+                        borderBottom: '2px solid #1976D2',
+                        outline: 'none',
+                        flex: 1,
+                        background: 'transparent'
+                      }}
+                    />
+                  ) : (
+                    <h2 
+                      onClick={startTitleEdit}
+                      style={{
+                        fontSize: '22px',
+                        fontWeight: '600',
+                        color: '#212529',
+                        cursor: 'text',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {currentPlanBox.title}
+                    </h2>
+                  )}
+                  <button 
+                    onClick={startTitleEdit}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '50%',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <span className="material-icons-outlined" style={{fontSize: '18px', color: '#999'}}>edit</span>
+                  </button>
+                </div>
+                <button 
+                  className="modal-close" 
+                  onClick={hideModal}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: '28px',
+                    cursor: 'pointer',
+                    color: '#999',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '50%',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            
+            {/* 모달 바디 */}
+            <div style={{padding: '20px 24px', background: '#fafafa'}}>
+              {/* 장소 검색 섹션 */}
+              <div style={{
+                marginBottom: '20px',
+                padding: '16px',
+                background: 'white',
+                borderRadius: '8px',
+                border: '1px solid #e9ecef'
+              }}>
+                <label style={{
+                  fontSize: '13px',
+                  color: '#495057',
+                  fontWeight: '600',
+                  display: 'block',
+                  marginBottom: '8px'
+                }}>
+                  📍 장소 검색
+                </label>
+                <div style={{position: 'relative'}}>
+                  <input
+                    type="text"
+                    placeholder="장소명을 검색하세요 (예: 도쿄 타워, 신주쿠 역)"
+                    value={searchQuery}
+                    onChange={(e) => handleSearchInput(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 40px 10px 12px',
+                      border: '1px solid #dee2e6',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      outline: 'none',
+                      transition: 'border-color 0.2s'
+                    }}
+                  />
+                  <span style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#868e96',
+                    fontSize: '20px'
+                  }}>
+                    🔍
+                  </span>
+                  
+                  {/* 검색 결과 */}
+                  {searchResults.length > 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      background: 'white',
+                      border: '1px solid #dee2e6',
+                      borderRadius: '6px',
+                      marginTop: '4px',
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      zIndex: 1000,
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                    }}>
+                      {searchResults.map((place, index) => (
+                        <div
+                          key={index}
+                          onClick={() => selectPlace(place)}
+                          style={{
+                            padding: '10px 12px',
+                            borderBottom: index < searchResults.length - 1 ? '1px solid #f1f3f5' : 'none',
+                            cursor: 'pointer',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#f8f9fa'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                        >
+                          <div style={{fontSize: '14px', fontWeight: '500', color: '#212529'}}>
+                            {place.place_name}
+                          </div>
+                          <div style={{fontSize: '12px', color: '#868e96', marginTop: '2px'}}>
+                            {place.road_address_name || place.address_name}
+                          </div>
+                          {place.phone && (
+                            <div style={{fontSize: '12px', color: '#868e96', marginTop: '2px'}}>
+                              📞 {place.phone}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {isSearching && (
+                    <div style={{
+                      position: 'absolute',
+                      right: '40px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#868e96',
+                      fontSize: '12px'
+                    }}>
+                      검색 중...
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* 시간 정보 */}
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '18px'}}>
+                <div>
+                  <label style={{fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px', fontWeight: '500'}}>
+                    <span className="material-icons-outlined" style={{fontSize: '14px', verticalAlign: 'middle'}}>schedule</span>
+                    시작 시간
+                  </label>
+                  <div style={{display: 'flex', gap: '4px'}}>
+                    <select 
+                      value={currentPlanBox.startHour !== null ? currentPlanBox.startHour : ''}
+                      onChange={(e) => setCurrentPlanBox({...currentPlanBox, startHour: e.target.value ? parseInt(e.target.value) : null, hasTimeSet: true})}
+                      style={{flex: 1, padding: '7px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px'}}
+                    >
+                      <option value="">시간 미설정</option>
+                      {Array.from({length: 24}, (_, i) => (
+                        <option key={i} value={i}>{String(i).padStart(2, '0')}시</option>
+                      ))}
+                    </select>
+                    <select 
+                      value={currentPlanBox.startMinute || 0}
+                      onChange={(e) => setCurrentPlanBox({...currentPlanBox, startMinute: parseInt(e.target.value), hasTimeSet: true})}
+                      style={{width: '80px', padding: '7px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px'}}
+                    >
+                      {[0, 10, 20, 30, 40, 50].map(minute => (
+                        <option key={minute} value={minute}>{String(minute).padStart(2, '0')}분</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                
+                <div>
+                  <label style={{fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px', fontWeight: '500'}}>
+                    <span className="material-icons-outlined" style={{fontSize: '14px', verticalAlign: 'middle'}}>timer</span>
+                    소요 시간
+                  </label>
+                  <div style={{display: 'flex', gap: '4px', alignItems: 'center'}}>
+                    <input 
+                      type="number"
+                      min="0"
+                      max="23"
+                      value={currentPlanBox.durationHour}
+                      onChange={(e) => setCurrentPlanBox({...currentPlanBox, durationHour: parseInt(e.target.value) || 0})}
+                      style={{width: '60px', padding: '7px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px'}}
+                    />
+                    <span style={{color: '#999', fontSize: '12px'}}>시간</span>
+                    <select 
+                      value={currentPlanBox.durationMinute}
+                      onChange={(e) => setCurrentPlanBox({...currentPlanBox, durationMinute: parseInt(e.target.value)})}
+                      style={{width: '80px', padding: '7px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px'}}
+                    >
+                      {[0, 10, 20, 30, 40, 50].map(minute => (
+                        <option key={minute} value={minute}>{minute}분</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              {/* 종료 시간 표시 */}
+              <div id="endTimeDisplay" style={{
+                marginBottom: '18px', 
+                padding: '8px', 
+                background: '#e3f2fd', 
+                borderRadius: '6px', 
+                textAlign: 'center', 
+                color: '#1976D2', 
+                fontSize: '13px', 
+                fontWeight: '500'
+              }}>
+                종료: {currentPlanBox.startHour !== null && currentPlanBox.startMinute !== null ? 
+                  calculateEndTime(currentPlanBox.startHour, currentPlanBox.startMinute, currentPlanBox.durationHour, currentPlanBox.durationMinute) : 
+                  '--:--'
+                }
+              </div>
+              
+              {/* 카테고리와 비용 */}
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '18px'}}>
+                <div>
+                  <label style={{fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px', fontWeight: '500'}}>
+                    <span className="material-icons-outlined" style={{fontSize: '14px', verticalAlign: 'middle'}}>category</span>
+                    카테고리
+                  </label>
+                  <select 
+                    value={currentPlanBox.category}
+                    onChange={(e) => setCurrentPlanBox({...currentPlanBox, category: e.target.value})}
+                    style={{width: '100%', padding: '7px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px'}}
+                  >
+                    <option value="food">🍽️ 식사</option>
+                    <option value="transport">🚌 이동</option>
+                    <option value="activity">⚽ 활동</option>
+                    <option value="sightseeing">📷 관광</option>
+                    <option value="shopping">🛍️ 쇼핑</option>
+                    <option value="accommodation">🏨 숙박</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px', fontWeight: '500'}}>
+                    💰 예상 비용
+                  </label>
+                  <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                    <input 
+                      type="number" 
+                      value={currentPlanBox.cost.replace(/[^0-9]/g, '')}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '')
+                        setCurrentPlanBox({...currentPlanBox, cost: value})
+                      }}
+                      placeholder="0"
+                      style={{flex: 1, padding: '7px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px'}}
+                    />
+                    <select
+                      value={selectedCurrency}
+                      onChange={(e) => {
+                        setSelectedCurrency(e.target.value)
+                        // 환율 설정 (실제로는 API에서 가져와야 함)
+                        const rates: {[key: string]: number} = {
+                          'KRW': 1,
+                          'JPY': 9.5,  // 100엔 = 950원
+                          'USD': 1300, // 1달러 = 1300원
+                          'EUR': 1400  // 1유로 = 1400원
+                        }
+                        setExchangeRate(rates[e.target.value] || 1)
+                      }}
+                      style={{width: '80px', padding: '7px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '13px'}}
+                    >
+                      <option value="KRW">원</option>
+                      <option value="JPY">엔</option>
+                      <option value="USD">달러</option>
+                      <option value="EUR">유로</option>
+                    </select>
+                  </div>
+                  {selectedCurrency !== 'KRW' && currentPlanBox.cost && (
+                    <div style={{
+                      marginTop: '4px',
+                      fontSize: '11px',
+                      color: '#868e96'
+                    }}>
+                      ≈ {(parseInt(currentPlanBox.cost) * exchangeRate).toLocaleString()}원
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* 위치 */}
+              <div style={{marginBottom: '18px'}}>
+                <label style={{fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px', fontWeight: '500'}}>
+                  <span className="material-icons-outlined" style={{fontSize: '14px', verticalAlign: 'middle'}}>location_on</span>
+                  위치
+                </label>
+                <div style={{display: 'flex', gap: '8px'}}>
+                  <input 
+                    type="text"
+                    value={currentPlanBox.location || ''}
+                    onChange={(e) => setCurrentPlanBox({...currentPlanBox, location: e.target.value})}
+                    placeholder="위치를 입력하세요"
+                    style={{
+                      flex: 1,
+                      padding: '7px',
+                      border: '1px solid #ddd',
+                      borderRadius: '6px',
+                      fontSize: '14px'
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      setIsMapModalOpen(true)
+                      setSelectedLocation(currentPlanBox.location || '')
+                    }}
+                    style={{
+                      padding: '7px 12px',
+                      background: '#2196F3',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <span className="material-icons" style={{fontSize: '18px'}}>map</span>
+                    지도
+                  </button>
+                </div>
+              </div>
+              
+              {/* 메모 */}
+              <div style={{marginBottom: '18px'}}>
+                <label style={{fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px', fontWeight: '500'}}>
+                  <span className="material-icons-outlined" style={{fontSize: '14px', verticalAlign: 'middle'}}>notes</span>
+                  메모
+                </label>
+                <textarea 
+                  value={currentPlanBox.memo}
+                  onChange={(e) => setCurrentPlanBox({...currentPlanBox, memo: e.target.value})}
+                  placeholder="자세한 정보나 메모를 입력하세요"
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    minHeight: '80px',
+                    resize: 'vertical',
+                    fontFamily: 'inherit'
+                  }}
+                />
+              </div>
+            </div>
+            
+            {/* 모달 푸터 */}
+            <div style={{
+              padding: '14px 24px', 
+              borderTop: '1px solid #e0e0e0', 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              background: 'white'
+            }}>
+              {isEditing && (
+                <button 
+                  className="btn btn-danger"
+                  id="deleteBtn"
+                  onClick={() => deletePlanBox(currentPlanBox.id)}
+                  style={{
+                    padding: '7px 14px', 
+                    background: '#f44336', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '6px', 
+                    cursor: 'pointer', 
+                    fontSize: '13px', 
+                    fontWeight: '500', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '4px'
+                  }}
+                >
+                  <span className="material-icons" style={{fontSize: '16px'}}>delete_outline</span>
+                  삭제
+                </button>
+              )}
+              <div style={{flex: 1}}></div>
+              <button 
+                className="btn btn-secondary"
+                onClick={hideModal}
+                style={{
+                  padding: '7px 14px', 
+                  background: 'white', 
+                  color: '#666', 
+                  border: '1px solid #ddd', 
+                  borderRadius: '6px', 
+                  cursor: 'pointer', 
+                  marginRight: '8px', 
+                  fontSize: '13px', 
+                  fontWeight: '500'
+                }}
+              >
+                취소
+              </button>
+              <button 
+                className="btn btn-primary"
+                onClick={savePlanBox}
+                style={{
+                  padding: '7px 18px', 
+                  background: '#1976D2', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: '6px', 
+                  cursor: 'pointer', 
+                  fontSize: '13px', 
+                  fontWeight: '500', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '4px'
+                }}
+              >
+                <span className="material-icons" style={{fontSize: '16px'}}>check</span>
+                저장
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 지도 모달 */}
       {isMapModalOpen && (
         <div className="modal show" style={{zIndex: 2000}}>
           <div className="modal-content" style={{maxWidth: '700px', width: '90%', maxHeight: '80vh', overflow: 'auto'}}>

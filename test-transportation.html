@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이동 카테고리 테스트 시나리오</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2em;
+        }
+        .test-section {
+            margin-bottom: 40px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+        .test-section h2 {
+            color: #3b82f6;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .step {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
+        }
+        .step:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .step-number {
+            width: 35px;
+            height: 35px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .code {
+            background: #1e293b;
+            color: #fbbf24;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            display: inline-block;
+            margin: 0 2px;
+        }
+        .expected {
+            background: #dcfce7;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            border: 1px solid #86efac;
+        }
+        .expected h3 {
+            margin-top: 0;
+            color: #16a34a;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .console-log {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+        .success {
+            color: #10b981;
+        }
+        .error {
+            color: #ef4444;
+        }
+        .warning {
+            color: #f59e0b;
+        }
+        .info {
+            color: #3b82f6;
+        }
+        .button {
+            background: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        .button:hover {
+            background: #2563eb;
+        }
+        .note {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            border: 1px solid #fbbf24;
+        }
+        .note strong {
+            color: #d97706;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 이동 카테고리 테스트 시나리오</h1>
+        
+        <div class="test-section">
+            <h2>📋 테스트 준비</h2>
+            <div class="step">
+                <div class="step-number">1</div>
+                <div>브라우저에서 <code>http://localhost:3000/planner</code> 열기</div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div>개발자 도구 콘솔 열기 (F12 → Console 탭)</div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div>콘솔 내용 지우기 (Clear 버튼 또는 Ctrl+L)</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 테스트 시나리오 1: 기본 이동 경로 계산</h2>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div>좌측 사이드바에서 <strong>일반 박스</strong> 생성 (카테고리: 관광)</div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div>박스 제목: <code>경복궁</code>, 장소명: <code>경복궁</code> 입력 후 저장</div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div>좌측 사이드바에서 <strong>이동 박스</strong> 생성 (카테고리: 이동 선택)</div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">4</div>
+                <div>이동 박스를 경복궁 박스 아래에 배치</div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">5</div>
+                <div>또 다른 일반 박스 생성 후 제목: <code>북촌한옥마을</code>, 장소명: <code>북촌한옥마을</code> 입력</div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">6</div>
+                <div>북촌한옥마을 박스를 이동 박스 아래에 배치</div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">7</div>
+                <div>이동 박스를 클릭하여 모달 열기</div>
+            </div>
+            
+            <div class="expected">
+                <h3>✅ 예상 결과</h3>
+                <ul>
+                    <li><strong>카테고리 선택 UI가 표시되지 않음</strong> (이동 카테고리는 고정)</li>
+                    <li>이동 경로 섹션이 표시됨</li>
+                    <li>이동 수단 선택 버튼 3개 표시 (자동차/대중교통/도보)</li>
+                    <li>"경로 계산하기" 버튼이 표시됨</li>
+                </ul>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">8</div>
+                <div><strong>"🗺️ 경로 계산하기"</strong> 버튼 클릭</div>
+            </div>
+            
+            <div class="expected">
+                <h3>✅ 예상 콘솔 로그</h3>
+                <div class="console-log">
+                    <div class="info">🚗 경로 계산 시작</div>
+                    <div>현재 박스: {id: ..., title: "이동", category: "이동", ...}</div>
+                    <div>배치된 박스들: [{...}, {...}, {...}]</div>
+                    <div>정렬된 박스들: [...]</div>
+                    <div>현재 박스 인덱스: 1</div>
+                    <div>이전 박스: {title: "경복궁", placeName: "경복궁", ...}</div>
+                    <div>다음 박스: {title: "북촌한옥마을", placeName: "북촌한옥마을", ...}</div>
+                    <div class="info">📍 출발지: 경복궁</div>
+                    <div class="info">🎯 도착지: 북촌한옥마을</div>
+                    <div class="success">✅ 경로 계산 완료: car - 4.5km, 22분</div>
+                </div>
+            </div>
+            
+            <div class="expected">
+                <h3>✅ UI 변경사항</h3>
+                <ul>
+                    <li>출발지: <strong>경복궁</strong> 표시</li>
+                    <li>도착지: <strong>북촌한옥마을</strong> 표시</li>
+                    <li>예상 거리와 시간 표시 (예: 4.5km, 22분)</li>
+                    <li>소요시간 필드가 자동으로 업데이트됨</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 테스트 시나리오 2: 이동 수단 변경</h2>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div>경로 계산이 완료된 상태에서 <strong>"🚇 대중교통"</strong> 버튼 클릭</div>
+            </div>
+            
+            <div class="expected">
+                <h3>✅ 예상 콘솔 로그</h3>
+                <div class="console-log">
+                    <div>이동 수단 변경: 대중교통</div>
+                    <div class="info">🚗 경로 계산 시작</div>
+                    <div class="success">✅ 경로 계산 완료: public - 8.7km, 45분</div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div><strong>"🚶 도보"</strong> 버튼 클릭</div>
+            </div>
+            
+            <div class="expected">
+                <h3>✅ 예상 콘솔 로그</h3>
+                <div class="console-log">
+                    <div>이동 수단 변경: 도보</div>
+                    <div class="info">🚗 경로 계산 시작</div>
+                    <div class="success">✅ 경로 계산 완료: walk - 2.1km, 28분</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 테스트 시나리오 3: 오류 상황</h2>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div>이동 박스만 단독으로 생성 (위아래에 다른 박스 없음)</div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div>이동 박스 클릭 → "경로 계산하기" 클릭</div>
+            </div>
+            
+            <div class="expected">
+                <h3>⚠️ 예상 결과</h3>
+                <div class="console-log">
+                    <div class="error">❌ 배치된 박스가 없음</div>
+                </div>
+                <p>또는</p>
+                <div class="console-log">
+                    <div class="warning">⚠️ 출발지 또는 도착지를 찾을 수 없음</div>
+                </div>
+                <p><strong>Alert 메시지:</strong> "이동 박스 위아래에 장소 정보가 있는 박스가 필요합니다."</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 테스트 시나리오 4: 연속 이동 박스</h2>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div>박스 순서: 경복궁 → 이동1 → 이동2 → 북촌한옥마을</div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div>이동1 박스의 경로 계산</div>
+            </div>
+            
+            <div class="expected">
+                <h3>✅ 예상 결과</h3>
+                <ul>
+                    <li>출발지: 경복궁</li>
+                    <li>도착지: 북촌한옥마을 (이동2를 건너뛰고 다음 장소 찾음)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="note">
+            <strong>📌 중요 체크포인트:</strong>
+            <ul>
+                <li>이동 카테고리 선택 시 카테고리 드롭다운이 숨겨지는지 확인</li>
+                <li>경로 계산 시 콘솔에 디버그 로그가 제대로 출력되는지 확인</li>
+                <li>이동 수단 변경 시 경로가 자동으로 재계산되는지 확인</li>
+                <li>저장 후 다시 열었을 때 경로 정보가 유지되는지 확인</li>
+            </ul>
+        </div>
+
+        <a href="http://localhost:3000/planner" target="_blank" class="button">
+            플래너 페이지 열기 →
+        </a>
+    </div>
+</body>
+</html>

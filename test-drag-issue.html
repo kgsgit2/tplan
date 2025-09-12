@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>드래그 문제 재현 테스트</title>
+    <style>
+        .container {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+        }
+        .sidebar {
+            width: 200px;
+            background: #f0f0f0;
+            padding: 10px;
+        }
+        .timeline {
+            flex: 1;
+            background: #fff;
+            border: 1px solid #ddd;
+        }
+        .slot {
+            height: 60px;
+            border-bottom: 1px solid #eee;
+            position: relative;
+        }
+        .planbox {
+            padding: 10px;
+            margin: 5px;
+            background: #4CAF50;
+            color: white;
+            cursor: grab;
+            border-radius: 4px;
+        }
+        .placed-box {
+            position: absolute;
+            left: 0;
+            right: 0;
+            background: #2196F3;
+            color: white;
+            padding: 5px;
+            cursor: grab;
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+        .placed-box.dragging {
+            opacity: 0.3;
+        }
+        .ghost-box {
+            position: absolute;
+            left: 0;
+            right: 0;
+            background: rgba(33, 150, 243, 0.3);
+            border: 2px dashed #2196F3;
+            pointer-events: none;
+        }
+        .log {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 300px;
+            height: 200px;
+            background: black;
+            color: green;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar" id="sidebar">
+            <h3>플랜박스</h3>
+            <div class="planbox" draggable="true" data-id="1">플랜 1</div>
+            <div class="planbox" draggable="true" data-id="2">플랜 2</div>
+        </div>
+        <div class="timeline" id="timeline">
+            <h3>타임라인</h3>
+            <div class="slot" data-hour="9"></div>
+            <div class="slot" data-hour="10"></div>
+            <div class="slot" data-hour="11"></div>
+            <div class="slot" data-hour="12"></div>
+            <div class="slot" data-hour="13"></div>
+            <div class="slot" data-hour="14"></div>
+        </div>
+    </div>
+    <div class="log" id="log"></div>
+
+    <script>
+        let draggedElement = null;
+        let draggedData = null;
+        let isDraggingFromTimeline = false;
+        let ghostBox = null;
+        const logDiv = document.getElementById('log');
+        
+        function log(message) {
+            const time = new Date().toISOString().split('T')[1].slice(0, 12);
+            logDiv.innerHTML = `${time} ${message}<br>` + logDiv.innerHTML;
+            console.log(message);
+        }
+
+        // 사이드바 플랜박스 드래그 시작
+        document.querySelectorAll('.planbox').forEach(box => {
+            box.addEventListener('dragstart', (e) => {
+                draggedElement = e.target;
+                draggedData = { id: e.target.dataset.id, text: e.target.textContent };
+                isDraggingFromTimeline = false;
+                e.target.style.opacity = '0.3';
+                log(`🟢 Drag start: ${draggedData.text} from sidebar`);
+            });
+            
+            box.addEventListener('dragend', (e) => {
+                e.target.style.opacity = '1';
+                cleanup();
+                log(`🔴 Drag end`);
+            });
+        });
+
+        // 슬롯 이벤트
+        document.querySelectorAll('.slot').forEach(slot => {
+            slot.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                
+                if (draggedData) {
+                    // 고스트 박스 표시
+                    removeGhost();
+                    ghostBox = document.createElement('div');
+                    ghostBox.className = 'ghost-box';
+                    ghostBox.style.height = '40px';
+                    ghostBox.style.top = '10px';
+                    ghostBox.textContent = draggedData.text;
+                    slot.appendChild(ghostBox);
+                    
+                    log(`📍 Drag over slot ${slot.dataset.hour}`);
+                }
+            });
+            
+            slot.addEventListener('dragleave', (e) => {
+                removeGhost();
+            });
+            
+            slot.addEventListener('drop', (e) => {
+                e.preventDefault();
+                removeGhost();
+                
+                if (draggedData) {
+                    // 박스 배치
+                    const placedBox = document.createElement('div');
+                    placedBox.className = 'placed-box';
+                    placedBox.draggable = true;
+                    placedBox.dataset.id = draggedData.id;
+                    placedBox.textContent = draggedData.text;
+                    placedBox.style.height = '40px';
+                    placedBox.style.top = '10px';
+                    
+                    // 타임라인 박스 이벤트
+                    placedBox.addEventListener('dragstart', (e) => {
+                        e.stopPropagation(); // 이벤트 버블링 방지
+                        draggedElement = e.target;
+                        draggedData = { 
+                            id: e.target.dataset.id, 
+                            text: e.target.textContent,
+                            originalSlot: slot.dataset.hour 
+                        };
+                        isDraggingFromTimeline = true;
+                        e.target.classList.add('dragging');
+                        log(`🟡 Drag start: ${draggedData.text} from timeline slot ${slot.dataset.hour}`);
+                    });
+                    
+                    placedBox.addEventListener('dragend', (e) => {
+                        e.target.classList.remove('dragging');
+                        cleanup();
+                        log(`🔴 Drag end from timeline`);
+                    });
+                    
+                    // 박스가 자기 자신 위를 지날 때 문제 재현
+                    placedBox.addEventListener('dragover', (e) => {
+                        // 이 이벤트가 발생하면 문제!
+                        log(`⚠️ WARNING: Dragover on placed-box itself!`);
+                        e.stopPropagation();
+                    });
+                    
+                    slot.appendChild(placedBox);
+                    
+                    // 사이드바에서 제거
+                    if (!isDraggingFromTimeline) {
+                        const sidebarBox = document.querySelector(`.planbox[data-id="${draggedData.id}"]`);
+                        if (sidebarBox) sidebarBox.remove();
+                    } else {
+                        // 타임라인에서 이동한 경우 원래 박스 제거
+                        if (draggedElement && draggedElement !== placedBox) {
+                            draggedElement.remove();
+                        }
+                    }
+                    
+                    log(`✅ Dropped in slot ${slot.dataset.hour}`);
+                }
+            });
+        });
+
+        function removeGhost() {
+            if (ghostBox) {
+                ghostBox.remove();
+                ghostBox = null;
+            }
+        }
+
+        function cleanup() {
+            draggedElement = null;
+            draggedData = null;
+            isDraggingFromTimeline = false;
+            removeGhost();
+        }
+    </script>
+</body>
+</html>
