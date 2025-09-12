@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import PlanBoxModal from './PlanBoxModal'
+import TransportBoxModal from './TransportBoxModal'
 import { supabase } from '@/lib/supabase'
 import type { Database } from '@/types/database.types'
 
@@ -1077,9 +1078,9 @@ export default function PlannerPage() {
       category: 'transport',
       startHour: null,
       startMinute: null,
-      durationHour: 1,
-      durationMinute: 0,
-      cost: '',
+      durationHour: 0,
+      durationMinute: 30,
+      cost: '무료',
       memo: '',
       hasTimeSet: false,
       transportMode: 'car', // 기본값: 자동차
@@ -1087,24 +1088,26 @@ export default function PlannerPage() {
         origin: '',
         destination: '',
         distance: 0,
-        duration: 0
+        duration: 30
       }
     }
     
-    setPlanboxData(prev => [...prev, transportData])
-    
-    if (categoryFilter !== 'all' && categoryFilter !== 'transport') {
-      setCategoryFilter('all')
-    }
+    // 바로 모달로 열기 (생성 시 편집 불가)
+    setCurrentPlanBox(transportData)
+    setIsModalOpen(true)
   }
 
-  // 이동박스 자동 경로 계산 함수
+  // 이동박스 자동 경로 계산 함수 (개선된 버전)
   function calculateRouteForTransportBox(transportBox: PlanBox, dayIndex: number) {
     if (transportBox.category !== 'transport') return transportBox;
     
-    // 같은 날의 배치된 박스들 가져오기
+    // 같은 날의 배치된 박스들 가져오기 (이동 박스 제외)
     const sameDayBoxes = placedBoxes
-      .filter(box => box.dayIndex === dayIndex && box.id !== transportBox.id)
+      .filter(box => 
+        box.dayIndex === dayIndex && 
+        box.id !== transportBox.id && 
+        box.category !== 'transport' // 이동 박스는 제외
+      )
       .sort((a, b) => {
         if (a.startHour === null || b.startHour === null) return 0;
         return (a.startHour * 60 + (a.startMinute || 0)) - (b.startHour * 60 + (b.startMinute || 0));
@@ -1119,25 +1122,33 @@ export default function PlannerPage() {
     for (const box of sameDayBoxes) {
       if (!box.startHour) continue;
       const boxTime = box.startHour * 60 + (box.startMinute || 0);
+      const boxEndTime = boxTime + box.durationHour * 60 + box.durationMinute;
       
-      if (boxTime < transportTime) {
-        upperBox = box; // 가장 가까운 상단 박스
-      } else if (boxTime > transportTime && !lowerBox) {
-        lowerBox = box; // 가장 가까운 하단 박스
+      // 이동 박스 시작 시간과 가장 가까운 박스들 찾기
+      if (boxEndTime <= transportTime) {
+        upperBox = box; // 이동 시작 전 마지막 박스
+      } else if (boxTime >= transportTime && !lowerBox) {
+        lowerBox = box; // 이동 종료 후 첫 박스
         break;
       }
     }
 
-    // 출발지/도착지 설정
-    const origin = upperBox?.location || upperBox?.placeName || '';
-    const destination = lowerBox?.location || lowerBox?.placeName || '';
+    // 출발지/도착지 설정 (더 구체적인 정보 사용)
+    const origin = upperBox?.placeName || upperBox?.location || upperBox?.title || '출발지';
+    const destination = lowerBox?.placeName || lowerBox?.location || lowerBox?.title || '도착지';
     
-    if (origin && destination) {
-      // 실제 경로 계산은 카카오 API로 (현재는 간단한 예시)
-      const estimatedDistance = Math.floor(Math.random() * 20 + 5); // 5-25km 랜덤
-      const estimatedDuration = transportBox.transportMode === 'walk' ? estimatedDistance * 12 : 
-                                transportBox.transportMode === 'public' ? estimatedDistance * 3 :
-                                estimatedDistance * 2; // 자동차: 2분/km
+    if (upperBox && lowerBox) {
+      // 이동 수단별 속도 설정 (km/h)
+      const speeds = {
+        car: 40,    // 도시 내 평균 속도
+        public: 25, // 대중교통 평균 속도
+        walk: 4     // 도보 속도
+      };
+      
+      // 실제 경로 계산은 카카오 API로 (현재는 추정치)
+      const estimatedDistance = Math.floor(Math.random() * 15 + 5); // 5-20km
+      const speed = speeds[transportBox.transportMode || 'car'];
+      const estimatedDuration = Math.round((estimatedDistance / speed) * 60); // 분 단위
       
       return {
         ...transportBox,
@@ -1150,6 +1161,21 @@ export default function PlannerPage() {
         title: `${origin} → ${destination}`,
         durationHour: Math.floor(estimatedDuration / 60),
         durationMinute: estimatedDuration % 60
+      };
+    } else if (upperBox || lowerBox) {
+      // 한쪽만 있는 경우
+      const knownLocation = upperBox || lowerBox;
+      return {
+        ...transportBox,
+        routeInfo: {
+          origin: upperBox ? (upperBox.placeName || upperBox.location || upperBox.title) : '출발지',
+          destination: lowerBox ? (lowerBox.placeName || lowerBox.location || lowerBox.title) : '도착지',
+          distance: 0,
+          duration: 30 // 기본값 30분
+        },
+        title: transportBox.title || '이동',
+        durationHour: 0,
+        durationMinute: 30
       };
     }
     
@@ -2061,30 +2087,79 @@ export default function PlannerPage() {
                                         
                                         <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: '2px'}}>
                                           {box.category === 'transport' && box.routeInfo ? (
-                                            // 이동박스 전용 표시
+                                            // 이동박스 전용 표시 (간소화된 컨텐츠 뷰)
                                             <>
-                                              {box.routeInfo.origin && box.routeInfo.destination && (
-                                                <div style={{fontSize: '11px', color: '#2E7D32', fontWeight: '600'}}>
-                                                  🚗 {box.routeInfo.origin} → {box.routeInfo.destination}
-                                                </div>
-                                              )}
-                                              {showFullInfo && (
-                                                <div style={{display: 'flex', gap: '8px', fontSize: '10px', color: '#666'}}>
-                                                  <span>🕒 {box.routeInfo.duration}분</span>
-                                                  <span>📏 {box.routeInfo.distance}km</span>
-                                                  {box.transportMode && (
-                                                    <span>{box.transportMode === 'car' ? '🚗' : box.transportMode === 'public' ? '🚌' : '🚶‍♂️'}</span>
-                                                  )}
-                                                </div>
-                                              )}
-                                              {box.cost && box.cost !== '무료' && showFullInfo && (
-                                                <div style={{fontSize: '11px', color: '#555'}}>
-                                                  💰 {box.cost}
-                                                </div>
-                                              )}
-                                              {box.memo && (
-                                                <div style={{fontSize: '11px', color: '#555', lineHeight: '1.3', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: maxMemoLines, WebkitBoxOrient: 'vertical'}}>
-                                                  📝 {box.memo}
+                                              {/* 경로 표시 */}
+                                              <div style={{
+                                                fontSize: '11px', 
+                                                color: '#1a1a1a', 
+                                                fontWeight: '600',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '4px'
+                                              }}>
+                                                <span style={{
+                                                  display: 'inline-flex',
+                                                  alignItems: 'center',
+                                                  justifyContent: 'center',
+                                                  width: '16px',
+                                                  height: '16px',
+                                                  borderRadius: '50%',
+                                                  backgroundColor: box.transportMode === 'car' ? '#3b82f6' : 
+                                                                   box.transportMode === 'public' ? '#10b981' : '#f59e0b',
+                                                  color: 'white',
+                                                  fontSize: '10px',
+                                                  fontWeight: 'bold'
+                                                }}>
+                                                  {box.transportMode === 'car' ? 'C' : 
+                                                   box.transportMode === 'public' ? 'P' : 'W'}
+                                                </span>
+                                                <span style={{
+                                                  flex: 1,
+                                                  overflow: 'hidden',
+                                                  textOverflow: 'ellipsis',
+                                                  whiteSpace: 'nowrap'
+                                                }}>
+                                                  {box.routeInfo.origin} → {box.routeInfo.destination}
+                                                </span>
+                                              </div>
+                                              
+                                              {/* 시간 및 거리 표시 */}
+                                              <div style={{
+                                                display: 'flex', 
+                                                gap: '12px', 
+                                                fontSize: '10px', 
+                                                color: '#6b7280',
+                                                marginTop: '2px'
+                                              }}>
+                                                <span style={{display: 'flex', alignItems: 'center', gap: '2px'}}>
+                                                  <span style={{fontSize: '9px'}}>⏱</span>
+                                                  {box.routeInfo.duration < 60 
+                                                    ? `${box.routeInfo.duration}분`
+                                                    : `${Math.floor(box.routeInfo.duration / 60)}시간 ${box.routeInfo.duration % 60 > 0 ? `${box.routeInfo.duration % 60}분` : ''}`
+                                                  }
+                                                </span>
+                                                <span style={{display: 'flex', alignItems: 'center', gap: '2px'}}>
+                                                  <span style={{fontSize: '9px'}}>📏</span>
+                                                  {box.routeInfo.distance.toFixed(1)}km
+                                                </span>
+                                              </div>
+                                              
+                                              {/* 메모 (있는 경우만) */}
+                                              {box.memo && showFullInfo && (
+                                                <div style={{
+                                                  fontSize: '10px', 
+                                                  color: '#6b7280', 
+                                                  lineHeight: '1.3', 
+                                                  overflow: 'hidden', 
+                                                  display: '-webkit-box', 
+                                                  WebkitLineClamp: 1, 
+                                                  WebkitBoxOrient: 'vertical',
+                                                  marginTop: '4px',
+                                                  paddingTop: '4px',
+                                                  borderTop: '1px solid #f3f4f6'
+                                                }}>
+                                                  {box.memo}
                                                 </div>
                                               )}
                                             </>
@@ -2674,16 +2749,26 @@ export default function PlannerPage() {
       </div>
 
       {/* 플랜박스 상세 모달 */}
-      <PlanBoxModal
-        isOpen={isModalOpen}
-        planBox={currentPlanBox}
-        placedBoxes={placedBoxes}
-        onClose={hideModal}
-        onSave={(updatedBox) => {
-          console.log('💾 모달에서 저장 요청:', updatedBox)
-          savePlanBox(updatedBox)
-        }}
-      />
+      {currentPlanBox?.category === 'transport' ? (
+        <TransportBoxModal
+          isOpen={isModalOpen}
+          planBox={currentPlanBox}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleModalSave}
+          placedBoxes={placedBoxes}
+        />
+      ) : (
+        <PlanBoxModal
+          isOpen={isModalOpen}
+          planBox={currentPlanBox}
+          placedBoxes={placedBoxes}
+          onClose={hideModal}
+          onSave={(updatedBox) => {
+            console.log('💾 모달에서 저장 요청:', updatedBox)
+            savePlanBox(updatedBox)
+          }}
+        />
+      )}
       {isMapModalOpen && (
         <div className="modal show" style={{zIndex: 2000}}>
           <div className="modal-content" style={{maxWidth: '700px', width: '90%', maxHeight: '80vh', overflow: 'auto'}}>
