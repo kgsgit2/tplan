@@ -5,13 +5,19 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build", 
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
-    "test:debug": "playwright test --debug"
+    "test:debug": "playwright test --debug",
+    "test:e2e": "playwright test",
+    "claude:start": "node .claude/multi-session-sync.js handover",
+    "claude:save": "node .claude/multi-session-sync.js save",
+    "claude:sync": "node .claude/multi-session-sync.js sync",
+    "claude:supabase": "node .claude/supabase-session-sync.js handover",
+    "claude:history": "node .claude/supabase-session-sync.js history"
   },
   "repository": {
     "type": "git",
