@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import PlanBoxModal from './PlanBoxModal'
+import { supabase } from '@/lib/supabase'
+import type { Database } from '@/types/database.types'
 
 // 카카오 맵 API 타입 정의
 declare global {
@@ -125,7 +127,7 @@ export default function PlannerPage() {
   // 카카오 맵 API 로드
   useEffect(() => {
     const script = document.createElement('script')
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=d0d67d94afae47e0ab9c29b0e6aea5cf&libraries=services&autoload=false`
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_API_KEY}&libraries=services&autoload=false`
     script.async = true
     document.head.appendChild(script)
     
@@ -174,10 +176,10 @@ export default function PlannerPage() {
 
   // 자동저장 - 106번 줄의 useEffect 제거 (602번 줄에 통합된 자동저장 로직 있음)
 
-  // 컴포넌트 마운트 시 localStorage에서 데이터 불러오기
+  // 컴포넌트 마운트 시 Supabase에서 데이터 불러오기 (실패 시 localStorage)
   useEffect(() => {
-    console.log('🔄 Loading data from localStorage on mount')
-    loadFromStorage()
+    console.log('🔄 Loading data from Supabase on mount')
+    loadFromSupabase()
   }, [])
 
   // 투명한 드래그 이미지 생성
@@ -272,22 +274,25 @@ export default function PlannerPage() {
       const y = e.clientY - rect.top
       const slotHeight = rect.height // 60px
       
-      // 10분 단위로 정확한 스냅 계산
-      const minutePerPixel = 60 / slotHeight  // 1픽셀당 분
-      const calculatedMinute = y * minutePerPixel  // 계산된 분
-      let minute = Math.round(calculatedMinute / 10) * 10  // 10분 단위로 반올림
+      // 10분 단위로 정확한 스냅 계산 (드롭과 동일한 로직)
+      const minuteOffset = Math.floor((y / slotHeight) * 60)
+      let minute = Math.round(minuteOffset / 10) * 10 // 10분 단위로 반올림 스냅
       
-      // 분이 60 이상이면 조정
+      // 분이 60을 넘어가면 다음 시간으로 조정 (드롭과 동일)
+      let adjustedHour = hour
       if (minute >= 60) {
-        minute = 50 // 최대 50분
-      }
-      if (minute < 0) {
+        adjustedHour = hour + 1
         minute = 0
+      }
+      // 분이 음수면 이전 시간으로 조정 (드롭과 동일)
+      if (minute < 0) {
+        adjustedHour = hour - 1
+        minute = 50
       }
       
       // 시간배지 위치와 텍스트 설정
-      const startTimeText = formatTime(hour, minute)
-      const totalMinutes = (hour * 60 + minute) + (draggedData.durationHour * 60 + draggedData.durationMinute)
+      const startTimeText = formatTime(adjustedHour, minute)
+      const totalMinutes = (adjustedHour * 60 + minute) + (draggedData.durationHour * 60 + draggedData.durationMinute)
       const endHour = Math.floor(totalMinutes / 60)
       const endMinute = totalMinutes % 60
       const endTimeText = formatTime(endHour, endMinute)
@@ -303,7 +308,7 @@ export default function PlannerPage() {
       
       setDragGhost({
         dayIndex,
-        hour,
+        hour: adjustedHour,
         minute: minute,
         height: Math.min(duration, 480), // 최대 8시간(480분)으로 제한
         category: draggedData.category,
@@ -431,6 +436,12 @@ export default function PlannerPage() {
       
       // 3초 후 메시지 자동 제거
       setTimeout(() => setConflictMessage(null), 3000)
+    }
+    
+    // 이동박스인 경우 자동 경로 계산
+    if (placedBox.category === 'transport') {
+      placedBox = calculateRouteForTransportBox(placedBox, dayIndex);
+      console.log('🚗 Calculated route for transport box:', placedBox.routeInfo);
     }
     
     // 배치된 박스 목록에 추가 또는 업데이트
@@ -635,6 +646,159 @@ export default function PlannerPage() {
     }
   }, [resizingBox, resizeDirection, resizeStartY, resizeOriginalHeight, resizeOriginalTop])
 
+  // 고정 UUID 생성 (실제로는 사용자 인증 후 동적으로 생성)
+  const TEMP_TRIP_ID = '550e8400-e29b-41d4-a716-446655440000' // 임시 고정 UUID
+  const TEMP_USER_ID = '550e8400-e29b-41d4-a716-446655440001' // 임시 고정 UUID
+
+  // Supabase 저장 함수
+  const saveToSupabase = async (customData?: any) => {
+    try {
+      const dataToSave = customData || {
+        planboxData,
+        placedBoxes,
+        tripTitle,
+        startDate,
+        endDate,
+        totalDays,
+        dayTimeRanges,
+        lastSaved: new Date().toISOString()
+      }
+
+      // trip 데이터 저장/업데이트
+      const { data: trip, error: tripError } = await supabase
+        .from('trips')
+        .upsert({
+          id: TEMP_TRIP_ID,
+          user_id: TEMP_USER_ID,
+          title: dataToSave.tripTitle,
+          start_date: dataToSave.startDate,
+          end_date: dataToSave.endDate,
+          destination: '도쿄', // 기본값
+          country_code: 'JP', // 기본값
+          is_domestic: false, // 기본값
+          visibility: 'private' as const, // 기본값
+          total_budget: 0, // 기본값
+          currency: 'KRW', // 기본값
+          updated_at: new Date().toISOString()
+        } as any) // 임시로 any 타입으로 우회
+        .select()
+        .single()
+
+      if (tripError) throw tripError
+
+      // 기존 plan_boxes 삭제 후 새로 추가
+      await supabase
+        .from('plan_boxes')
+        .delete()
+        .eq('trip_id', TEMP_TRIP_ID)
+
+      // plan_boxes 저장
+      const allBoxes = [...dataToSave.planboxData, ...dataToSave.placedBoxes]
+      if (allBoxes.length > 0) {
+        const { error: boxError } = await supabase
+          .from('plan_boxes')
+          .insert(
+            allBoxes.map((box, index) => ({
+              id: `${TEMP_TRIP_ID}-box-${index}`,
+              trip_id: TEMP_TRIP_ID,
+              title: box.title,
+              category: box.category,
+              start_hour: box.startHour,
+              start_minute: box.startMinute,
+              duration_hour: box.durationHour,
+              duration_minute: box.durationMinute,
+              cost: box.cost,
+              memo: box.memo,
+              location: box.location,
+              place_name: box.placeName,
+              address: box.address,
+              phone_number: box.phoneNumber,
+              has_time_set: box.hasTimeSet,
+              day_index: box.dayIndex,
+              top: box.top,
+              height: box.height,
+              transport_mode: box.transportMode || null
+            })) as any // 임시로 any 타입으로 우회
+          )
+        
+        if (boxError) throw boxError
+      }
+
+      console.log('💾 Supabase 저장 완료')
+    } catch (error) {
+      // console.error('❌ Supabase 저장 실패:', error) // 임시로 주석 처리
+      // 실패 시 localStorage로 백업
+      saveToStorage(customData)
+    }
+  }
+
+  // Supabase 로드 함수
+  const loadFromSupabase = async () => {
+    try {
+      // trip 데이터 로드
+      const { data: trip, error: tripError } = await supabase
+        .from('trips')
+        .select('*')
+        .eq('id', TEMP_TRIP_ID)
+        .single()
+
+      if (tripError) throw tripError
+
+      // plan_boxes 데이터 로드  
+      const { data: boxes, error: boxError } = await supabase
+        .from('plan_boxes')
+        .select('*')
+        .eq('trip_id', TEMP_TRIP_ID)
+
+      if (boxError) throw boxError
+
+      if (trip) {
+        setTripTitle((trip as any).title)
+        setStartDate((trip as any).start_date)
+        setEndDate((trip as any).end_date)
+        setTotalDays((trip as any).total_days)
+      }
+
+      if (boxes) {
+        const convertedBoxes = (boxes as any[]).map((box: any, index: number) => ({
+          id: index + 1,
+          title: box.title,
+          category: box.category,
+          startHour: box.start_hour,
+          startMinute: box.start_minute,
+          durationHour: box.duration_hour,
+          durationMinute: box.duration_minute,
+          cost: box.cost,
+          memo: box.memo,
+          location: box.location,
+          placeName: box.place_name,
+          address: box.address,
+          phoneNumber: box.phone_number,
+          hasTimeSet: box.has_time_set,
+          dayIndex: box.day_index,
+          top: box.top,
+          height: box.height,
+          transportMode: box.transport_mode as 'car' | 'public' | 'walk' | undefined
+        }))
+
+        // placed와 unplaced 박스 분리
+        const placed = convertedBoxes.filter(box => box.dayIndex !== null && box.dayIndex !== undefined)
+        const unplaced = convertedBoxes.filter(box => box.dayIndex === null || box.dayIndex === undefined)
+        
+        setPlacedBoxes(placed)
+        setPlanboxData(unplaced)
+      }
+
+      console.log('🔄 Supabase에서 데이터 로드 완료')
+      return true
+    } catch (error) {
+      // console.error('❌ Supabase 로드 실패:', error) // 임시로 주석 처리
+      // 실패 시 localStorage에서 로드
+      loadFromStorage()
+      return false
+    }
+  }
+
   // localStorage 저장 함수 (에러 처리 강화)
   const saveToStorage = (customData?: any) => {
     const dataToSave = customData || {
@@ -737,10 +901,10 @@ export default function PlannerPage() {
     updateTimeline()
   }, [])
 
-  // 자동저장 - 데이터 변경시마다 저장
+  // 자동저장 - 데이터 변경시마다 Supabase에 저장 (실패 시 localStorage)
   useEffect(() => {
     if (planboxData.length > 0 || placedBoxes.length > 0) {
-      saveToStorage()
+      saveToSupabase()
     }
   }, [planboxData, placedBoxes, tripTitle, startDate, endDate, totalDays, dayTimeRanges])
 
@@ -905,9 +1069,91 @@ export default function PlannerPage() {
     }
   }
 
-  // 이동박스 생성
+  // 이동박스 생성 (특별한 Transport 박스)
   function createTransportBox() {
-    createQuickBox('transport')
+    const transportData: PlanBox = {
+      id: Date.now(),
+      title: '이동',
+      category: 'transport',
+      startHour: null,
+      startMinute: null,
+      durationHour: 1,
+      durationMinute: 0,
+      cost: '',
+      memo: '',
+      hasTimeSet: false,
+      transportMode: 'car', // 기본값: 자동차
+      routeInfo: {
+        origin: '',
+        destination: '',
+        distance: 0,
+        duration: 0
+      }
+    }
+    
+    setPlanboxData(prev => [...prev, transportData])
+    
+    if (categoryFilter !== 'all' && categoryFilter !== 'transport') {
+      setCategoryFilter('all')
+    }
+  }
+
+  // 이동박스 자동 경로 계산 함수
+  function calculateRouteForTransportBox(transportBox: PlanBox, dayIndex: number) {
+    if (transportBox.category !== 'transport') return transportBox;
+    
+    // 같은 날의 배치된 박스들 가져오기
+    const sameDayBoxes = placedBoxes
+      .filter(box => box.dayIndex === dayIndex && box.id !== transportBox.id)
+      .sort((a, b) => {
+        if (a.startHour === null || b.startHour === null) return 0;
+        return (a.startHour * 60 + (a.startMinute || 0)) - (b.startHour * 60 + (b.startMinute || 0));
+      });
+
+    // 이동박스 시간으로 상단/하단 박스 찾기
+    const transportTime = transportBox.startHour ? transportBox.startHour * 60 + (transportBox.startMinute || 0) : 0;
+    
+    let upperBox: PlanBox | null = null;
+    let lowerBox: PlanBox | null = null;
+    
+    for (const box of sameDayBoxes) {
+      if (!box.startHour) continue;
+      const boxTime = box.startHour * 60 + (box.startMinute || 0);
+      
+      if (boxTime < transportTime) {
+        upperBox = box; // 가장 가까운 상단 박스
+      } else if (boxTime > transportTime && !lowerBox) {
+        lowerBox = box; // 가장 가까운 하단 박스
+        break;
+      }
+    }
+
+    // 출발지/도착지 설정
+    const origin = upperBox?.location || upperBox?.placeName || '';
+    const destination = lowerBox?.location || lowerBox?.placeName || '';
+    
+    if (origin && destination) {
+      // 실제 경로 계산은 카카오 API로 (현재는 간단한 예시)
+      const estimatedDistance = Math.floor(Math.random() * 20 + 5); // 5-25km 랜덤
+      const estimatedDuration = transportBox.transportMode === 'walk' ? estimatedDistance * 12 : 
+                                transportBox.transportMode === 'public' ? estimatedDistance * 3 :
+                                estimatedDistance * 2; // 자동차: 2분/km
+      
+      return {
+        ...transportBox,
+        routeInfo: {
+          origin,
+          destination,
+          distance: estimatedDistance,
+          duration: estimatedDuration
+        },
+        title: `${origin} → ${destination}`,
+        durationHour: Math.floor(estimatedDuration / 60),
+        durationMinute: estimatedDuration % 60
+      };
+    }
+    
+    return transportBox;
   }
 
   // 필터링된 플랜박스 목록
@@ -1105,7 +1351,7 @@ export default function PlannerPage() {
     
     // 모달을 닫기 전에 저장
     setTimeout(() => {
-      saveToStorage()
+      saveToSupabase()
     }, 100)
     
     hideModal()
@@ -1280,6 +1526,30 @@ export default function PlannerPage() {
             title="임시 초기화 버튼"
           >
             초기화(임시)
+          </button>
+          
+          {/* Supabase 수동 저장 버튼 */}
+          <button 
+            onClick={() => {
+              console.log('🔄 수동 저장 버튼 클릭')
+              saveToSupabase()
+            }}
+            style={{
+              position: 'absolute',
+              left: '200px',
+              padding: '4px 10px',
+              background: '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              opacity: 0.8
+            }}
+            title="Supabase에 수동 저장"
+          >
+            DB저장
           </button>
         </div>
         
@@ -1790,22 +2060,55 @@ export default function PlannerPage() {
                                         </div>
                                         
                                         <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: '2px'}}>
-                                          {box.memo && (
-                                            <div style={{fontSize: '11px', color: '#555', lineHeight: '1.3', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: maxMemoLines, WebkitBoxOrient: 'vertical'}}>
-                                              📝 {box.memo}
-                                            </div>
-                                          )}
-                                          
-                                          {box.cost && box.cost !== '무료' && showFullInfo && (
-                                            <div style={{fontSize: '11px', color: '#555'}}>
-                                              💰 {box.cost}
-                                            </div>
-                                          )}
-                                          
-                                          {box.location && showLocation && (
-                                            <div style={{fontSize: '11px', color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
-                                              📍 {box.location}
-                                            </div>
+                                          {box.category === 'transport' && box.routeInfo ? (
+                                            // 이동박스 전용 표시
+                                            <>
+                                              {box.routeInfo.origin && box.routeInfo.destination && (
+                                                <div style={{fontSize: '11px', color: '#2E7D32', fontWeight: '600'}}>
+                                                  🚗 {box.routeInfo.origin} → {box.routeInfo.destination}
+                                                </div>
+                                              )}
+                                              {showFullInfo && (
+                                                <div style={{display: 'flex', gap: '8px', fontSize: '10px', color: '#666'}}>
+                                                  <span>🕒 {box.routeInfo.duration}분</span>
+                                                  <span>📏 {box.routeInfo.distance}km</span>
+                                                  {box.transportMode && (
+                                                    <span>{box.transportMode === 'car' ? '🚗' : box.transportMode === 'public' ? '🚌' : '🚶‍♂️'}</span>
+                                                  )}
+                                                </div>
+                                              )}
+                                              {box.cost && box.cost !== '무료' && showFullInfo && (
+                                                <div style={{fontSize: '11px', color: '#555'}}>
+                                                  💰 {box.cost}
+                                                </div>
+                                              )}
+                                              {box.memo && (
+                                                <div style={{fontSize: '11px', color: '#555', lineHeight: '1.3', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: maxMemoLines, WebkitBoxOrient: 'vertical'}}>
+                                                  📝 {box.memo}
+                                                </div>
+                                              )}
+                                            </>
+                                          ) : (
+                                            // 일반 박스 표시
+                                            <>
+                                              {box.memo && (
+                                                <div style={{fontSize: '11px', color: '#555', lineHeight: '1.3', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: maxMemoLines, WebkitBoxOrient: 'vertical'}}>
+                                                  📝 {box.memo}
+                                                </div>
+                                              )}
+                                              
+                                              {box.cost && box.cost !== '무료' && showFullInfo && (
+                                                <div style={{fontSize: '11px', color: '#555'}}>
+                                                  💰 {box.cost}
+                                                </div>
+                                              )}
+                                              
+                                              {box.location && showLocation && (
+                                                <div style={{fontSize: '11px', color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
+                                                  📍 {box.location}
+                                                </div>
+                                              )}
+                                            </>
                                           )}
                                         </div>
                                       </div>

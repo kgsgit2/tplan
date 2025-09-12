@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "C:\\Users\\KGS2\\AppData\\Roaming\\npm\\mcp-server-supabase.cmd",
+      "env": {
+        "SUPABASE_URL": "https://fsznctkjtakcvjuhrxpx.supabase.co",
+        "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzem5jdGtqdGFrY3ZqdWhyeHB4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzY2ODQ2NiwiZXhwIjoyMDczMjQ0NDY2fQ.LE22HM2ndf6nLUki2PpR0H8jnxkoOh8grCZdiuFLeHA",
+        "SUPABASE_ACCESS_TOKEN": "sbp_cc4e11291616667bbaab34af14994abf5a4bc282"
+      }
+    }
+  }
+}

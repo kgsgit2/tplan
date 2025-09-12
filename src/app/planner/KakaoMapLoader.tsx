@@ -63,9 +63,18 @@ export default function KakaoMapLoader({ onLoad, onError }: KakaoMapLoaderProps)
     console.log('[KakaoMapLoader] 새 스크립트 태그 생성...')
     
     // 환경 변수에서 API 키 가져오기
-    const apiKeys = [
-      process.env.NEXT_PUBLIC_KAKAO_API_KEY || 'd0d67d94afae47e0ab9c29b0e6aea5cf',
-    ]
+    const apiKey = process.env.NEXT_PUBLIC_KAKAO_API_KEY
+    
+    if (!apiKey) {
+      const errorMsg = 'KAKAO API KEY가 설정되지 않았습니다. .env.local 파일에 NEXT_PUBLIC_KAKAO_API_KEY를 설정하세요.'
+      console.error('[KakaoMapLoader]', errorMsg)
+      setLoadStatus('error')
+      setErrorMessage(errorMsg)
+      onError(errorMsg)
+      return
+    }
+    
+    const apiKeys = [apiKey]
     
     let keyIndex = 0
     

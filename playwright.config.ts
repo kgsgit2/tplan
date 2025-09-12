@@ -8,7 +8,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:3004',
+    baseURL: 'http://localhost:3003',
     trace: 'on-first-retry',
     screenshot: 'on',
   },
@@ -28,9 +28,10 @@ export default defineConfig({
     },
   ],
 
-  // webServer: {
-  //   command: 'npm run dev',
-  //   url: 'http://localhost:3003',
-  //   reuseExistingServer: !process.env.CI,
-  // },
+  webServer: {
+    command: 'npm run dev',
+    port: 3003,
+    reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000,
+  },
 });

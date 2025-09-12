@@ -9,7 +9,7 @@ export default function TestKakaoPage() {
   useEffect(() => {
     // 스크립트 동적 로드
     const script = document.createElement('script')
-    script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=d0d67d94afae47e0ab9c29b0e6aea5cf&libraries=services&autoload=false'
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_API_KEY}&libraries=services&autoload=false`
     script.async = true
     
     script.onload = () => {
