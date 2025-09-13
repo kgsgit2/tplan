@@ -15,7 +15,6 @@ const os = require('os');
 
 class AutoSync {
   constructor() {
-    this.statusFile = 'CLAUDE_STATUS.md';
     this.location = os.hostname().includes('KGS2') ? '지하' : '1층';
     this.timestamp = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
   }
@@ -77,14 +76,19 @@ npm run e
 \`\`\`
 `;
 
-    // 5. 상태 파일 저장
-    fs.writeFileSync(this.statusFile, report);
+    // 5. 상태는 콘솔에만 출력 (파일 생성하지 않음)
     console.log(report);
 
-    // 6. 이전 작업 내역 확인
-    if (fs.existsSync('LAST_WORK.md')) {
-      console.log('\n📋 이전 작업 내역:');
-      console.log(fs.readFileSync('LAST_WORK.md', 'utf8'));
+    // 6. 작업 로그 확인 (WORK_LOG.md)
+    if (fs.existsSync('WORK_LOG.md')) {
+      const workLog = fs.readFileSync('WORK_LOG.md', 'utf8');
+      const lines = workLog.split('\n');
+      // 마지막 작업 내역만 표시 (최근 20줄)
+      const recentWork = lines.slice(-20).join('\n');
+      if (recentWork.trim()) {
+        console.log('\n📋 최근 작업 내역:');
+        console.log(recentWork);
+      }
     }
 
     console.log('\n✅ 준비 완료! 작업을 시작하세요.\n');
