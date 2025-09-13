@@ -94,7 +94,10 @@ npm run e
   end(message) {
     console.log(`\n🏁 ${this.location} 작업 종료 (${this.timestamp})\n`);
 
-    // 1. 현재 상태 확인
+    // 1. 작업 로그 업데이트
+    this.updateWorkLog(message);
+
+    // 2. 현재 상태 확인
     const status = this.exec('git status --short', true);
 
     if (!status || status.trim() === '') {
@@ -102,15 +105,12 @@ npm run e
       return;
     }
 
-    // 2. 모든 변경사항 추가
+    // 3. 모든 변경사항 추가
     console.log('📝 변경사항 저장 중...');
     this.exec('git add -A');
 
-    // 3. 작업 내역 저장
-    const workMessage = message || `${this.location} 작업 - ${this.timestamp}`;
-    fs.writeFileSync('LAST_WORK.md', `# 마지막 작업\n\n- **위치**: ${this.location}\n- **시간**: ${this.timestamp}\n- **내용**: ${workMessage}\n`);
-
     // 4. 커밋
+    const workMessage = message || `${this.location} 작업 - ${this.timestamp}`;
     const commitMsg = `[${this.location}] ${workMessage}`;
     console.log(`💾 커밋: ${commitMsg}`);
     this.exec(`git commit -m "${commitMsg}"`);
@@ -121,6 +121,56 @@ npm run e
 
     console.log(`\n✅ ${this.location} 작업 완료 및 동기화됨!\n`);
     console.log('💡 다른 컴퓨터에서 "npm run s"로 시작하세요.\n');
+  }
+
+  // 작업 로그 업데이트
+  updateWorkLog(message) {
+    const logFile = 'WORK_LOG.md';
+    let content = '';
+
+    if (fs.existsSync(logFile)) {
+      content = fs.readFileSync(logFile, 'utf8');
+    } else {
+      content = '# 📝 작업 로그 (자동 업데이트)\n\n---\n\n';
+    }
+
+    const date = new Date().toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      weekday: 'long'
+    });
+    const time = new Date().toLocaleTimeString('ko-KR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const newEntry = `
+## ${date}
+
+### 🕐 ${time} - ${this.location}
+**작업 내용**: ${message || '작업 종료'}
+
+---
+`;
+
+    // 날짜가 이미 있으면 그 아래에 추가, 없으면 새로 추가
+    if (content.includes(`## ${date}`)) {
+      const dateIndex = content.indexOf(`## ${date}`);
+      const nextDateIndex = content.indexOf('\n## ', dateIndex + 1);
+      if (nextDateIndex === -1) {
+        content += `\n### 🕐 ${time} - ${this.location}\n**작업 내용**: ${message || '작업 종료'}\n\n---\n`;
+      } else {
+        const before = content.substring(0, nextDateIndex);
+        const after = content.substring(nextDateIndex);
+        content = before + `\n### 🕐 ${time} - ${this.location}\n**작업 내용**: ${message || '작업 종료'}\n\n---\n` + after;
+      }
+    } else {
+      content += newEntry;
+    }
+
+    fs.writeFileSync(logFile, content);
+    console.log('📋 작업 로그 업데이트됨');
   }
 
   // 상태만 확인
