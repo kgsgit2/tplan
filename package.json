@@ -26,7 +26,8 @@
     "e": "node .claude/auto-sync.js end",
     "claude:quick": "node .claude/quick-handover.js",
     "claude:quick-save": "node .claude/quick-handover.js save",
-    "claude:quick-load": "node .claude/quick-handover.js load"
+    "claude:quick-load": "node .claude/quick-handover.js load",
+    "claude:summary": "node .claude/session-summary.js"
   },
   "repository": {
     "type": "git",
