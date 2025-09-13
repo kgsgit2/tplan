@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6750A4">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Travel Planner - Mobile First</title>
+    <link rel="stylesheet" href="styles.css?v=2">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+</head>
+<body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Screen reader announcements -->
+    <div aria-live="polite" aria-atomic="true" class="sr-only" id="sr-announcements"></div>
+    <div aria-live="assertive" aria-atomic="true" class="sr-only" id="sr-alerts"></div>
+
+    <!-- App Shell -->
+    <div class="app-container" role="application" aria-label="Travel Planner">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar" aria-label="Navigation sidebar">
+            <div class="sidebar-header">
+                <div class="user-profile">
+                    <div class="avatar">
+                        <span class="material-icons-round">account_circle</span>
+                    </div>
+                    <div class="user-info">
+                        <h3 class="user-name">여행자</h3>
+                        <p class="user-email">traveler@example.com</p>
+                    </div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="sidebar-item active">
+                    <span class="material-icons-round">home</span>
+                    <span>홈</span>
+                </a>
+                <a href="#" class="sidebar-item">
+                    <span class="material-icons-round">explore</span>
+                    <span>여행 계획</span>
+                </a>
+                <a href="#" class="sidebar-item">
+                    <span class="material-icons-round">bookmark_border</span>
+                    <span>저장된 장소</span>
+                </a>
+                <a href="#" class="sidebar-item">
+                    <span class="material-icons-round">history</span>
+                    <span>최근 여행</span>
+                </a>
+                <div class="sidebar-divider"></div>
+                <a href="#" class="sidebar-item">
+                    <span class="material-icons-round">settings</span>
+                    <span>설정</span>
+                </a>
+                <a href="#" class="sidebar-item">
+                    <span class="material-icons-round">help_outline</span>
+                    <span>도움말</span>
+                </a>
+            </nav>
+        </aside>
+        
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        
+        <!-- Header -->
+        <header class="app-header" role="banner">
+            <div class="header-content">
+                <button class="icon-button menu-button" id="menuButton" aria-label="Open navigation menu" type="button" aria-expanded="false" aria-controls="sidebar">
+                    <span class="material-icons-round" aria-hidden="true">menu</span>
+                </button>
+                <h1 class="app-title" id="page-title">서울 여행</h1>
+                <div class="header-actions">
+                    <button class="icon-button" aria-label="Search places and schedules" type="button">
+                        <span class="material-icons-round" aria-hidden="true">search</span>
+                    </button>
+                    <button class="icon-button theme-toggle" aria-label="Toggle dark mode" type="button" aria-pressed="false" role="switch">
+                        <span class="material-icons-round" aria-hidden="true">dark_mode</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Day Tabs (Swipeable) -->
+            <nav class="day-tabs" role="tablist" aria-label="Trip days">
+                <div class="tabs-container" id="dayTabs">
+                    <button role="tab" aria-selected="true" aria-controls="day1-panel" class="tab-button active">
+                        <span class="tab-date">12월 20일</span>
+                        <span class="tab-label">Day 1</span>
+                    </button>
+                    <button role="tab" aria-selected="false" aria-controls="day2-panel" class="tab-button">
+                        <span class="tab-date">12월 21일</span>
+                        <span class="tab-label">Day 2</span>
+                    </button>
+                    <button role="tab" aria-selected="false" aria-controls="day3-panel" class="tab-button">
+                        <span class="tab-date">12월 22일</span>
+                        <span class="tab-label">Day 3</span>
+                    </button>
+                    <button role="tab" aria-selected="false" aria-controls="day4-panel" class="tab-button">
+                        <span class="tab-date">12월 23일</span>
+                        <span class="tab-label">Day 4</span>
+                    </button>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <main id="main-content" class="main-content" role="main">
+            
+            <!-- Category Filter Pills -->
+            <section class="filter-section" aria-label="Category filters">
+                <div class="filter-pills">
+                    <button class="filter-pill active" aria-pressed="true">
+                        <span class="material-icons-round">select_all</span>
+                        전체
+                    </button>
+                    <button class="filter-pill" aria-pressed="false">
+                        <span class="material-icons-round">restaurant</span>
+                        식당
+                    </button>
+                    <button class="filter-pill" aria-pressed="false">
+                        <span class="material-icons-round">local_cafe</span>
+                        카페
+                    </button>
+                    <button class="filter-pill" aria-pressed="false">
+                        <span class="material-icons-round">attractions</span>
+                        관광
+                    </button>
+                    <button class="filter-pill" aria-pressed="false">
+                        <span class="material-icons-round">shopping_bag</span>
+                        쇼핑
+                    </button>
+                </div>
+            </section>
+
+            <!-- Timeline View -->
+            <section class="timeline-section" aria-label="Day itinerary">
+                <div class="timeline-container" id="timelineContainer">
+                    
+                    <!-- Plan Card 1 -->
+                    <article class="plan-card" draggable="true" tabindex="0" role="article" aria-label="Restaurant at 09:00 - 토스트럭 명동점" aria-describedby="plan-1-desc">
+                        <div class="card-time">
+                            <time>09:00</time>
+                            <div class="timeline-dot"></div>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-header">
+                                <span class="card-category restaurant">
+                                    <span class="material-icons-round">restaurant</span>
+                                </span>
+                                <h3 class="card-title" id="plan-1-title">토스트럭 명동점</h3>
+                                <button class="card-menu" aria-label="More options for 토스트럭 명동점" aria-haspopup="menu">
+                                    <span class="material-icons-round" aria-hidden="true">more_vert</span>
+                                </button>
+                            </div>
+                            <p class="card-description" id="plan-1-desc">명동 브런치 맛집, 수플레 팬케이크 추천</p>
+                            <div class="card-meta">
+                                <span class="meta-item">
+                                    <span class="material-icons-round">schedule</span>
+                                    1시간
+                                </span>
+                                <span class="meta-item">
+                                    <span class="material-icons-round">attach_money</span>
+                                    15,000원
+                                </span>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- Transport Card -->
+                    <div class="transport-card" role="region" aria-label="Transportation between locations">
+                        <span class="material-icons-round" aria-hidden="true">directions_subway</span>
+                        <span class="transport-info" aria-label="Subway Line 4, 15 minutes">지하철 4호선 • 15분</span>
+                        <button class="transport-edit" aria-label="Edit transportation method">
+                            <span class="material-icons-round" aria-hidden="true">edit</span>
+                        </button>
+                    </div>
+
+                    <!-- Plan Card 2 -->
+                    <article class="plan-card" draggable="true" tabindex="0" role="article" aria-label="Plan item">
+                        <div class="card-time">
+                            <time>10:30</time>
+                            <div class="timeline-dot"></div>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-header">
+                                <span class="card-category attraction">
+                                    <span class="material-icons-round">attractions</span>
+                                </span>
+                                <h3 class="card-title">경복궁</h3>
+                                <button class="card-menu" aria-label="More options">
+                                    <span class="material-icons-round">more_vert</span>
+                                </button>
+                            </div>
+                            <p class="card-description">조선 왕조의 법궁, 수문장 교대식 11:00</p>
+                            <div class="card-meta">
+                                <span class="meta-item">
+                                    <span class="material-icons-round">schedule</span>
+                                    2시간
+                                </span>
+                                <span class="meta-item">
+                                    <span class="material-icons-round">attach_money</span>
+                                    3,000원
+                                </span>
+                            </div>
+                            <div class="card-images">
+                                <div class="image-placeholder"></div>
+                                <div class="image-placeholder"></div>
+                                <div class="image-placeholder"></div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- Transport Card -->
+                    <div class="transport-card">
+                        <span class="material-icons-round">directions_walk</span>
+                        <span class="transport-info">도보 • 10분</span>
+                        <button class="transport-edit" aria-label="Edit transport">
+                            <span class="material-icons-round">edit</span>
+                        </button>
+                    </div>
+
+                    <!-- Plan Card 3 -->
+                    <article class="plan-card" draggable="true" tabindex="0" role="article" aria-label="Plan item">
+                        <div class="card-time">
+                            <time>13:00</time>
+                            <div class="timeline-dot"></div>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-header">
+                                <span class="card-category restaurant">
+                                    <span class="material-icons-round">restaurant</span>
+                                </span>
+                                <h3 class="card-title">통인시장 도시락카페</h3>
+                                <button class="card-menu" aria-label="More options">
+                                    <span class="material-icons-round">more_vert</span>
+                                </button>
+                            </div>
+                            <p class="card-description">엽전 도시락으로 유명한 전통시장</p>
+                            <div class="card-meta">
+                                <span class="meta-item">
+                                    <span class="material-icons-round">schedule</span>
+                                    1시간 30분
+                                </span>
+                                <span class="meta-item">
+                                    <span class="material-icons-round">attach_money</span>
+                                    10,000원
+                                </span>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- Add Plan Button (Inline) -->
+                    <button class="add-plan-inline" aria-label="Add plan here">
+                        <span class="material-icons-round">add_circle_outline</span>
+                        <span>일정 추가</span>
+                    </button>
+
+                </div>
+            </section>
+
+            <!-- Map View Placeholder -->
+            <section class="map-section" aria-label="Map view" hidden>
+                <div class="map-placeholder">
+                    <span class="material-icons-round">map</span>
+                    <p>지도 보기</p>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Floating Action Button -->
+        <button class="fab" aria-label="Add new plan to schedule" type="button" aria-keyshortcuts="Alt+A">
+            <span class="material-icons-round" aria-hidden="true">add</span>
+        </button>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav" role="navigation" aria-label="Main navigation">
+            <button class="nav-item active" aria-current="page" aria-label="Schedule view">
+                <span class="material-icons-round" aria-hidden="true">calendar_today</span>
+                <span class="nav-label">일정</span>
+            </button>
+            <button class="nav-item" aria-label="Map view">
+                <span class="material-icons-round" aria-hidden="true">map</span>
+                <span class="nav-label">지도</span>
+            </button>
+            <button class="nav-item" aria-label="Saved places">
+                <span class="material-icons-round" aria-hidden="true">bookmark</span>
+                <span class="nav-label">저장</span>
+            </button>
+            <button class="nav-item" aria-label="My profile">
+                <span class="material-icons-round" aria-hidden="true">person</span>
+                <span class="nav-label">내정보</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <!-- Modal Overlay -->
+    <div class="modal-overlay" id="modalOverlay" hidden></div>
+
+    <!-- Add Plan Modal -->
+    <div class="modal bottom-sheet" id="addPlanModal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+        <div class="sheet-handle" role="button" tabindex="0" aria-label="Drag to resize"></div>
+        <div class="modal-header">
+            <h2 id="modal-title">새 일정 추가</h2>
+            <button class="icon-button close-modal" aria-label="Close">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <div class="modal-content">
+            <form class="add-plan-form">
+                <div class="form-group">
+                    <label for="place-search">장소 검색</label>
+                    <div class="search-input-wrapper">
+                        <span class="material-icons-round" aria-hidden="true">search</span>
+                        <input type="search" id="place-search" placeholder="장소명, 주소 검색" autocomplete="off" aria-describedby="search-hint">
+                        <span id="search-hint" class="sr-only">Enter place name or address to search</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="time-select">시간 선택</label>
+                    <div class="time-picker">
+                        <input type="time" id="time-select" value="14:00">
+                        <span class="time-duration">
+                            <span class="material-icons-round">schedule</span>
+                            <select aria-label="Duration">
+                                <option>30분</option>
+                                <option selected>1시간</option>
+                                <option>1시간 30분</option>
+                                <option>2시간</option>
+                                <option>3시간</option>
+                            </select>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>카테고리</label>
+                    <div class="category-grid">
+                        <button type="button" class="category-btn">
+                            <span class="material-icons-round">restaurant</span>
+                            <span>식당</span>
+                        </button>
+                        <button type="button" class="category-btn">
+                            <span class="material-icons-round">local_cafe</span>
+                            <span>카페</span>
+                        </button>
+                        <button type="button" class="category-btn">
+                            <span class="material-icons-round">attractions</span>
+                            <span>관광</span>
+                        </button>
+                        <button type="button" class="category-btn">
+                            <span class="material-icons-round">shopping_bag</span>
+                            <span>쇼핑</span>
+                        </button>
+                        <button type="button" class="category-btn">
+                            <span class="material-icons-round">hotel</span>
+                            <span>숙소</span>
+                        </button>
+                        <button type="button" class="category-btn">
+                            <span class="material-icons-round">directions_bus</span>
+                            <span>교통</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="memo">메모</label>
+                    <textarea id="memo" rows="3" placeholder="예약 정보, 특이사항 등"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary">취소</button>
+                    <button type="submit" class="btn btn-primary">추가</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading States -->
+    <div class="skeleton-loader" hidden>
+        <div class="skeleton-card">
+            <div class="skeleton-time"></div>
+            <div class="skeleton-content">
+                <div class="skeleton-title"></div>
+                <div class="skeleton-text"></div>
+                <div class="skeleton-meta"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true" hidden>
+        <span class="toast-message"></span>
+    </div>
+
+    <script src="mobile-interactions.js?v=2"></script>
+</body>
+</html>

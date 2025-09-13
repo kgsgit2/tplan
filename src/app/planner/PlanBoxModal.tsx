@@ -553,35 +553,15 @@ export default function PlanBoxModal({ isOpen, planBox, onClose, onSave, placedB
                           setMapSearchQuery('')
                         }
                       }}
+                      className={`btn ${showMap ? 'btn-danger' : 'btn-primary'}`}
                       style={{
-                        padding: '12px 20px',
-                        backgroundColor: showMap ? '#ef4444' : '#3b82f6',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '15px',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
-                        minWidth: '140px',
-                        whiteSpace: 'nowrap',
-                        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = showMap ? '#dc2626' : '#2563eb'
-                        e.currentTarget.style.transform = 'translateY(-1px)'
-                        e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.15)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = showMap ? '#ef4444' : '#3b82f6'
-                        e.currentTarget.style.transform = 'translateY(0)'
-                        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)'
+                        minWidth: '140px'
                       }}
                     >
-                      <span style={{ fontSize: '18px' }}>🗺️</span>
+                      <span className="material-icons-outlined" style={{ fontSize: '18px' }}>map</span>
                       <span>{showMap ? '지도 닫기' : '지도 찾기'}</span>
                     </button>
                   </div>
@@ -590,36 +570,21 @@ export default function PlanBoxModal({ isOpen, planBox, onClose, onSave, placedB
                   {searchResults.length > 0 && (
                     <div 
                       className="search-dropdown"
+                      className="search-dropdown"
                       style={{
                         position: 'absolute',
                         top: 'auto',
                         left: '20px',
                         right: '20px',
                         marginTop: '-8px',
-                        backgroundColor: 'white',
-                        border: '2px solid #3b82f6',
-                        borderRadius: '8px',
                         maxHeight: '240px',
                         overflowY: 'auto',
-                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                        zIndex: 1000,
-                        animation: 'slideDown 0.2s ease-out'
+                        zIndex: 1000
                       }}>
-                      <style>{`
-                        @keyframes slideDown {
-                          from {
-                            opacity: 0;
-                            transform: translateY(-10px);
-                          }
-                          to {
-                            opacity: 1;
-                            transform: translateY(0);
-                          }
-                        }
-                      `}</style>
                       {searchResults.map((place, index) => (
                         <div
                           key={index}
+                          className={`search-result-item ${selectedResultIndex === index ? 'selected' : ''}`}
                           onClick={(e) => {
                             e.stopPropagation()
                             selectPlace(place)
@@ -1208,7 +1173,7 @@ export default function PlanBoxModal({ isOpen, planBox, onClose, onSave, placedB
                     right: '-20px',
                     width: '100px',
                     height: '100px',
-                    background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+                    background: '#3B82F6',
                     borderRadius: '50%',
                     opacity: 0.1
                   }} />
@@ -1425,7 +1390,7 @@ export default function PlanBoxModal({ isOpen, planBox, onClose, onSave, placedB
                     <div style={{
                       width: '2px',
                       height: '30px',
-                      background: 'linear-gradient(180deg, #10b981 0%, #3b82f6 100%)',
+                      background: '#22C55E',
                       position: 'relative'
                     }}>
                       <div style={{
@@ -1586,7 +1551,7 @@ export default function PlanBoxModal({ isOpen, planBox, onClose, onSave, placedB
 
                 {/* 예상 정보 표시 */}
                 <div style={{
-                  background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                  background: '#F7F8FA',
                   borderRadius: '12px',
                   padding: '20px',
                   marginBottom: '20px',
@@ -1692,7 +1657,7 @@ export default function PlanBoxModal({ isOpen, planBox, onClose, onSave, placedB
                       marginTop: '16px',
                       width: '100%',
                       padding: '12px',
-                      background: 'linear-gradient(90deg, #0ea5e9 0%, #0284c7 100%)',
+                      background: '#3B82F6',
                       color: 'white',
                       border: 'none',
                       borderRadius: '8px',
@@ -1854,7 +1819,7 @@ export default function PlanBoxModal({ isOpen, planBox, onClose, onSave, placedB
                     <div style={{ 
                       marginTop: '20px',
                       padding: '12px',
-                      background: 'linear-gradient(90deg, #dcfce7 0%, #d9f99d 100%)',
+                      background: '#22C55E',
                       borderRadius: '6px',
                       border: '1px solid #84cc16'
                     }}>

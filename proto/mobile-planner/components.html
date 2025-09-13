@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6750A4">
+    <title>Travel Planner - Components Showcase</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        /* Component Showcase Specific Styles */
+        .showcase-container {
+            padding: 20px;
+            max-width: 768px;
+            margin: 0 auto;
+        }
+        
+        .showcase-header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 16px;
+            margin-bottom: 32px;
+        }
+        
+        .showcase-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .showcase-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .component-section {
+            margin-bottom: 48px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--md-sys-color-primary);
+        }
+        
+        .section-description {
+            font-size: 14px;
+            color: var(--md-sys-color-on-surface-variant);
+            margin-bottom: 24px;
+        }
+        
+        .component-grid {
+            display: grid;
+            gap: 16px;
+        }
+        
+        .component-item {
+            background: var(--md-sys-color-surface-container-low);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .component-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--md-sys-color-on-surface-variant);
+            margin-bottom: 12px;
+        }
+        
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 12px;
+        }
+        
+        .color-swatch {
+            height: 80px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 8px;
+        }
+        
+        .icon-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 8px;
+            border-radius: 8px;
+            background: var(--md-sys-color-surface);
+            font-size: 10px;
+            text-align: center;
+        }
+        
+        .icon-item .material-icons-round {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .animation-demo {
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .animation-demo:active {
+            transform: scale(0.95);
+        }
+        
+        .animation-demo.bounce {
+            animation: bounce 1s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .spacing-demo {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .spacing-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .spacing-bar {
+            height: 32px;
+            background: var(--md-sys-color-primary);
+            border-radius: 4px;
+        }
+        
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        
+        .metric-card {
+            background: var(--md-sys-color-surface);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--md-sys-color-primary);
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: var(--md-sys-color-on-surface-variant);
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="showcase-container">
+        <!-- Header -->
+        <div class="showcase-header">
+            <h1 class="showcase-title">Travel Planner UI Kit</h1>
+            <p class="showcase-subtitle">Mobile-First Component Library</p>
+        </div>
+
+        <!-- Colors -->
+        <section class="component-section">
+            <h2 class="section-title">Color Palette</h2>
+            <p class="section-description">Material Design 3 color system with semantic meaning</p>
+            
+            <div class="component-item">
+                <div class="component-label">Primary Colors</div>
+                <div class="color-palette">
+                    <div class="color-swatch" style="background: var(--md-sys-color-primary)">Primary</div>
+                    <div class="color-swatch" style="background: var(--md-sys-color-secondary)">Secondary</div>
+                    <div class="color-swatch" style="background: var(--md-sys-color-tertiary)">Tertiary</div>
+                    <div class="color-swatch" style="background: var(--md-sys-color-error)">Error</div>
+                </div>
+            </div>
+            
+            <div class="component-item" style="margin-top: 16px;">
+                <div class="component-label">Category Colors</div>
+                <div class="color-palette">
+                    <div class="color-swatch" style="background: var(--color-restaurant)">Restaurant</div>
+                    <div class="color-swatch" style="background: var(--color-cafe)">Cafe</div>
+                    <div class="color-swatch" style="background: var(--color-attraction)">Attraction</div>
+                    <div class="color-swatch" style="background: var(--color-shopping)">Shopping</div>
+                    <div class="color-swatch" style="background: var(--color-hotel)">Hotel</div>
+                    <div class="color-swatch" style="background: var(--color-transport)">Transport</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Typography -->
+        <section class="component-section">
+            <h2 class="section-title">Typography</h2>
+            <p class="section-description">Pretendard font family with responsive scale</p>
+            
+            <div class="component-item">
+                <div style="font-size: var(--font-size-3xl); font-weight: 700; margin-bottom: 8px;">Display Large</div>
+                <div style="font-size: var(--font-size-2xl); font-weight: 600; margin-bottom: 8px;">Headline</div>
+                <div style="font-size: var(--font-size-xl); font-weight: 500; margin-bottom: 8px;">Title Large</div>
+                <div style="font-size: var(--font-size-lg); font-weight: 500; margin-bottom: 8px;">Title Medium</div>
+                <div style="font-size: var(--font-size-base); margin-bottom: 8px;">Body Text</div>
+                <div style="font-size: var(--font-size-sm); margin-bottom: 8px;">Label</div>
+                <div style="font-size: var(--font-size-xs);">Caption</div>
+            </div>
+        </section>
+
+        <!-- Buttons -->
+        <section class="component-section">
+            <h2 class="section-title">Buttons</h2>
+            <p class="section-description">Touch-friendly buttons with 44px minimum touch target</p>
+            
+            <div class="component-item">
+                <div class="component-label">Button Variants</div>
+                <div class="button-group">
+                    <button class="btn btn-primary">Primary Button</button>
+                    <button class="btn btn-secondary">Secondary Button</button>
+                </div>
+            </div>
+            
+            <div class="component-item" style="margin-top: 16px;">
+                <div class="component-label">Icon Buttons</div>
+                <div class="button-group">
+                    <button class="icon-button">
+                        <span class="material-icons-round">favorite</span>
+                    </button>
+                    <button class="icon-button">
+                        <span class="material-icons-round">share</span>
+                    </button>
+                    <button class="icon-button">
+                        <span class="material-icons-round">bookmark</span>
+                    </button>
+                    <button class="icon-button">
+                        <span class="material-icons-round">more_vert</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="component-item" style="margin-top: 16px;">
+                <div class="component-label">Floating Action Button</div>
+                <button class="fab" style="position: relative; bottom: auto; right: auto;">
+                    <span class="material-icons-round">add</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Cards -->
+        <section class="component-section">
+            <h2 class="section-title">Cards</h2>
+            <p class="section-description">Content containers with elevation and interaction states</p>
+            
+            <div class="component-item">
+                <div class="component-label">Plan Card</div>
+                <article class="plan-card" style="margin-left: 0;">
+                    <div class="card-time">
+                        <time>09:00</time>
+                        <div class="timeline-dot"></div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-header">
+                            <span class="card-category restaurant">
+                                <span class="material-icons-round">restaurant</span>
+                            </span>
+                            <h3 class="card-title">Sample Restaurant</h3>
+                            <button class="card-menu">
+                                <span class="material-icons-round">more_vert</span>
+                            </button>
+                        </div>
+                        <p class="card-description">A delicious breakfast spot in the city center</p>
+                        <div class="card-meta">
+                            <span class="meta-item">
+                                <span class="material-icons-round">schedule</span>
+                                1 hour
+                            </span>
+                            <span class="meta-item">
+                                <span class="material-icons-round">attach_money</span>
+                                15,000원
+                            </span>
+                        </div>
+                    </div>
+                </article>
+            </div>
+            
+            <div class="component-item" style="margin-top: 16px;">
+                <div class="component-label">Transport Card</div>
+                <div class="transport-card" style="margin: 0;">
+                    <span class="material-icons-round">directions_subway</span>
+                    <span class="transport-info">Subway Line 4 • 15 min</span>
+                    <button class="transport-edit">
+                        <span class="material-icons-round">edit</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Icons -->
+        <section class="component-section">
+            <h2 class="section-title">Icons</h2>
+            <p class="section-description">Material Icons Round for consistent visual language</p>
+            
+            <div class="component-item">
+                <div class="icon-grid">
+                    <div class="icon-item">
+                        <span class="material-icons-round">restaurant</span>
+                        <span>Food</span>
+                    </div>
+                    <div class="icon-item">
+                        <span class="material-icons-round">local_cafe</span>
+                        <span>Cafe</span>
+                    </div>
+                    <div class="icon-item">
+                        <span class="material-icons-round">attractions</span>
+                        <span>Attraction</span>
+                    </div>
+                    <div class="icon-item">
+                        <span class="material-icons-round">shopping_bag</span>
+                        <span>Shopping</span>
+                    </div>
+                    <div class="icon-item">
+                        <span class="material-icons-round">hotel</span>
+                        <span>Hotel</span>
+                    </div>
+                    <div class="icon-item">
+                        <span class="material-icons-round">directions_bus</span>
+                        <span>Bus</span>
+                    </div>
+                    <div class="icon-item">
+                        <span class="material-icons-round">directions_subway</span>
+                        <span>Subway</span>
+                    </div>
+                    <div class="icon-item">
+                        <span class="material-icons-round">directions_walk</span>
+                        <span>Walk</span>
+                    </div>
+                    <div class="icon-item">
+                        <span class="material-icons-round">local_taxi</span>
+                        <span>Taxi</span>
+                    </div>
+                    <div class="icon-item">
+                        <span class="material-icons-round">flight</span>
+                        <span>Flight</span>
+                    </div>
+                    <div class="icon-item">
+                        <span class="material-icons-round">map</span>
+                        <span>Map</span>
+                    </div>
+                    <div class="icon-item">
+                        <span class="material-icons-round">schedule</span>
+                        <span>Time</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Animations -->
+        <section class="component-section">
+            <h2 class="section-title">Animations</h2>
+            <p class="section-description">Smooth, physics-based animations for delightful interactions</p>
+            
+            <div class="component-item">
+                <div class="component-label">Click for Spring Animation</div>
+                <div class="animation-demo" onclick="this.classList.toggle('bounce')">
+                    Tap Me!
+                </div>
+            </div>
+            
+            <div class="component-item" style="margin-top: 16px;">
+                <div class="component-label">Easing Functions</div>
+                <div class="spacing-demo">
+                    <div class="spacing-item">
+                        <span style="width: 100px; font-size: 12px;">Standard</span>
+                        <div class="spacing-bar" style="width: 200px; animation: slideIn 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;"></div>
+                    </div>
+                    <div class="spacing-item">
+                        <span style="width: 100px; font-size: 12px;">Decelerate</span>
+                        <div class="spacing-bar" style="width: 200px; animation: slideIn 1s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+                    </div>
+                    <div class="spacing-item">
+                        <span style="width: 100px; font-size: 12px;">Spring</span>
+                        <div class="spacing-bar" style="width: 200px; animation: slideIn 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Spacing -->
+        <section class="component-section">
+            <h2 class="section-title">Spacing System</h2>
+            <p class="section-description">Consistent spacing for visual rhythm</p>
+            
+            <div class="component-item">
+                <div class="spacing-demo">
+                    <div class="spacing-item">
+                        <span style="width: 60px; font-size: 12px;">XS (4px)</span>
+                        <div class="spacing-bar" style="width: 4px;"></div>
+                    </div>
+                    <div class="spacing-item">
+                        <span style="width: 60px; font-size: 12px;">SM (8px)</span>
+                        <div class="spacing-bar" style="width: 8px;"></div>
+                    </div>
+                    <div class="spacing-item">
+                        <span style="width: 60px; font-size: 12px;">MD (16px)</span>
+                        <div class="spacing-bar" style="width: 16px;"></div>
+                    </div>
+                    <div class="spacing-item">
+                        <span style="width: 60px; font-size: 12px;">LG (24px)</span>
+                        <div class="spacing-bar" style="width: 24px;"></div>
+                    </div>
+                    <div class="spacing-item">
+                        <span style="width: 60px; font-size: 12px;">XL (32px)</span>
+                        <div class="spacing-bar" style="width: 32px;"></div>
+                    </div>
+                    <div class="spacing-item">
+                        <span style="width: 60px; font-size: 12px;">2XL (48px)</span>
+                        <div class="spacing-bar" style="width: 48px;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Forms -->
+        <section class="component-section">
+            <h2 class="section-title">Form Elements</h2>
+            <p class="section-description">Accessible and touch-optimized input controls</p>
+            
+            <div class="component-item">
+                <div class="form-group">
+                    <label for="demo-search">Search Input</label>
+                    <div class="search-input-wrapper">
+                        <span class="material-icons-round">search</span>
+                        <input type="search" id="demo-search" placeholder="Search places...">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="demo-time">Time Picker</label>
+                    <div class="time-picker">
+                        <input type="time" id="demo-time" value="14:00">
+                        <span class="time-duration">
+                            <span class="material-icons-round">schedule</span>
+                            <select>
+                                <option>1 hour</option>
+                                <option>2 hours</option>
+                            </select>
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Category Selection</label>
+                    <div class="category-grid">
+                        <button type="button" class="category-btn selected">
+                            <span class="material-icons-round">restaurant</span>
+                            <span>Food</span>
+                        </button>
+                        <button type="button" class="category-btn">
+                            <span class="material-icons-round">local_cafe</span>
+                            <span>Cafe</span>
+                        </button>
+                        <button type="button" class="category-btn">
+                            <span class="material-icons-round">attractions</span>
+                            <span>Tour</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Performance -->
+        <section class="component-section">
+            <h2 class="section-title">Performance Metrics</h2>
+            <p class="section-description">Target metrics for optimal user experience</p>
+            
+            <div class="component-item">
+                <div class="performance-metrics">
+                    <div class="metric-card">
+                        <div class="metric-value">< 1s</div>
+                        <div class="metric-label">First Contentful Paint</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">< 100ms</div>
+                        <div class="metric-label">Interaction to Next Paint</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">60 FPS</div>
+                        <div class="metric-label">Animation Frame Rate</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">44px</div>
+                        <div class="metric-label">Min Touch Target</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Accessibility -->
+        <section class="component-section">
+            <h2 class="section-title">Accessibility Features</h2>
+            <p class="section-description">WCAG 2.1 AA compliant components</p>
+            
+            <div class="component-item">
+                <ul style="list-style: none; padding: 0;">
+                    <li style="padding: 8px 0;">✓ Semantic HTML structure</li>
+                    <li style="padding: 8px 0;">✓ ARIA labels and roles</li>
+                    <li style="padding: 8px 0;">✓ Keyboard navigation support</li>
+                    <li style="padding: 8px 0;">✓ Focus indicators</li>
+                    <li style="padding: 8px 0;">✓ Color contrast ratios > 4.5:1</li>
+                    <li style="padding: 8px 0;">✓ Screen reader optimized</li>
+                    <li style="padding: 8px 0;">✓ Touch targets ≥ 44px</li>
+                    <li style="padding: 8px 0;">✓ Reduced motion support</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <section class="component-section">
+            <h2 class="section-title">Navigation</h2>
+            <p class="section-description">Mobile-optimized navigation patterns</p>
+            
+            <div class="component-item">
+                <div class="component-label">Day Tabs</div>
+                <nav class="day-tabs" style="margin: 0 -20px;">
+                    <div class="tabs-container">
+                        <button class="tab-button active">
+                            <span class="tab-date">Dec 20</span>
+                            <span class="tab-label">Day 1</span>
+                        </button>
+                        <button class="tab-button">
+                            <span class="tab-date">Dec 21</span>
+                            <span class="tab-label">Day 2</span>
+                        </button>
+                        <button class="tab-button">
+                            <span class="tab-date">Dec 22</span>
+                            <span class="tab-label">Day 3</span>
+                        </button>
+                    </div>
+                </nav>
+            </div>
+            
+            <div class="component-item" style="margin-top: 16px;">
+                <div class="component-label">Bottom Navigation</div>
+                <nav class="bottom-nav" style="position: relative; margin: 0 -20px;">
+                    <button class="nav-item active">
+                        <span class="material-icons-round">calendar_today</span>
+                        <span class="nav-label">Schedule</span>
+                    </button>
+                    <button class="nav-item">
+                        <span class="material-icons-round">map</span>
+                        <span class="nav-label">Map</span>
+                    </button>
+                    <button class="nav-item">
+                        <span class="material-icons-round">bookmark</span>
+                        <span class="nav-label">Saved</span>
+                    </button>
+                    <button class="nav-item">
+                        <span class="material-icons-round">person</span>
+                        <span class="nav-label">Profile</span>
+                    </button>
+                </nav>
+            </div>
+        </section>
+
+        <!-- States -->
+        <section class="component-section">
+            <h2 class="section-title">Loading States</h2>
+            <p class="section-description">Skeleton screens for perceived performance</p>
+            
+            <div class="component-item">
+                <div class="skeleton-card">
+                    <div class="skeleton-time"></div>
+                    <div class="skeleton-content">
+                        <div class="skeleton-title"></div>
+                        <div class="skeleton-text"></div>
+                        <div class="skeleton-meta"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Toast -->
+        <section class="component-section">
+            <h2 class="section-title">Notifications</h2>
+            <p class="section-description">Non-intrusive feedback messages</p>
+            
+            <div class="component-item">
+                <button class="btn btn-primary" onclick="showDemoToast()">Show Toast</button>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Toast for demo -->
+    <div class="toast" id="demo-toast" role="alert" hidden>
+        <span class="toast-message">This is a toast notification!</span>
+    </div>
+
+    <script>
+        // Demo interactions
+        function showDemoToast() {
+            const toast = document.getElementById('demo-toast');
+            const message = toast.querySelector('.toast-message');
+            
+            message.textContent = 'Component interaction successful!';
+            toast.hidden = false;
+            
+            requestAnimationFrame(() => {
+                toast.classList.add('show');
+            });
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    toast.hidden = true;
+                }, 300);
+            }, 3000);
+        }
+        
+        // Theme toggle
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            // Category button interactions
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Toggle selection
+                    this.classList.toggle('selected');
+                });
+            });
+            
+            // Add keyboard support for demo
+            document.querySelectorAll('button, [role="button"]').forEach(element => {
+                if (!element.getAttribute('tabindex')) {
+                    element.setAttribute('tabindex', '0');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

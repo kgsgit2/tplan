@@ -443,6 +443,9 @@ export default function PlannerPage() {
     if (placedBox.category === 'transport') {
       placedBox = calculateRouteForTransportBox(placedBox, dayIndex);
       console.log('🚗 Calculated route for transport box:', placedBox.routeInfo);
+      
+      // 이동박스는 자동으로 모달을 열지 않음 - 사용자가 클릭할 때만 열림
+      // 경로 계산은 완료되어 있으므로 사용자가 원할 때 편집 가능
     }
     
     // 배치된 박스 목록에 추가 또는 업데이트
@@ -470,21 +473,22 @@ export default function PlannerPage() {
 
   // 카테고리별 그라데이션 색상 반환 - 새로운 팔레트
   const getCategoryGradient = (category: string): string => {
+    // Return flat colors instead of gradients for clean design
     switch (category) {
       case 'food':
-        return 'linear-gradient(135deg, #f35b04 0%, #e94700 100%)'
+        return '#FF6B6B'
       case 'transport':
-        return 'linear-gradient(135deg, #f18701 0%, #e57600 100%)'
+        return '#A8DADC'
       case 'activity':
-        return 'linear-gradient(135deg, #f7b801 0%, #e5a900 100%)'
+        return '#3B82F6'
       case 'sightseeing':
-        return 'linear-gradient(135deg, #7678ed 0%, #5f61e6 100%)'
+        return '#9C27B0'
       case 'shopping':
-        return 'linear-gradient(135deg, #3d348b 0%, #2d2670 100%)'
+        return '#FFE66D'
       case 'accommodation':
-        return 'linear-gradient(135deg, #62b6cb 0%, #4fa3b8 100%)'
+        return '#673AB7'
       default:
-        return 'linear-gradient(135deg, #ced4da 0%, #adb5bd 100%)'
+        return '#A3A3A3'
     }
   }
 
@@ -1085,16 +1089,16 @@ export default function PlannerPage() {
       hasTimeSet: false,
       transportMode: 'car', // 기본값: 자동차
       routeInfo: {
-        origin: '',
-        destination: '',
+        origin: '출발지',
+        destination: '도착지',
         distance: 0,
         duration: 30
       }
     }
     
-    // 바로 모달로 열기 (생성 시 편집 불가)
-    setCurrentPlanBox(transportData)
-    setIsModalOpen(true)
+    // 드래그 가능한 박스로 즉시 추가
+    setPlanboxData(prev => [...prev, transportData])
+    console.log('🚗 이동박스 생성 (드래그 가능):', transportData)
   }
 
   // 이동박스 자동 경로 계산 함수 (개선된 버전)
@@ -1339,7 +1343,48 @@ export default function PlannerPage() {
     
     console.log('💾 PlanBox 저장 시작:', box)
     
-    if (isEditing) {
+    // 이동박스인 경우 특별 처리
+    if (box.category === 'transport') {
+      // 타임라인에 배치된 경우
+      if (box.dayIndex !== undefined && box.startHour !== null) {
+        const existingIndex = placedBoxes.findIndex(p => p.id === box.id)
+        if (existingIndex >= 0) {
+          // 기존 박스 업데이트
+          setPlacedBoxes(prev => {
+            const updated = [...prev]
+            updated[existingIndex] = box
+            console.log('💾 이동박스 업데이트 (타임라인):', updated)
+            return updated
+          })
+        } else {
+          // 새로 배치
+          setPlacedBoxes(prev => {
+            const updated = [...prev, box]
+            console.log('💾 이동박스 추가 (타임라인):', updated)
+            return updated
+          })
+        }
+        // planboxData에서 제거
+        setPlanboxData(prev => prev.filter(item => item.id !== box.id))
+      } else {
+        // 타임라인에 배치되지 않은 경우 - planboxData에 추가/업데이트
+        const existingIndex = planboxData.findIndex(p => p.id === box.id)
+        if (existingIndex >= 0) {
+          setPlanboxData(prev => {
+            const updated = [...prev]
+            updated[existingIndex] = box
+            console.log('💾 이동박스 업데이트 (미배치):', updated)
+            return updated
+          })
+        } else {
+          setPlanboxData(prev => {
+            const updated = [...prev, box]
+            console.log('💾 이동박스 추가 (미배치):', updated)
+            return updated
+          })
+        }
+      }
+    } else if (isEditing) {
       // 기존 박스 업데이트
       setPlanboxData(prev => {
         const updated = prev.map(item => 
@@ -1586,7 +1631,7 @@ export default function PlannerPage() {
             top: '70px',
             left: '50%',
             transform: 'translateX(-50%)',
-            background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)',
+            background: '#EF4444',
             color: 'white',
             padding: '12px 20px',
             borderRadius: '8px',
@@ -1629,12 +1674,7 @@ export default function PlannerPage() {
             id="startDate" 
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            style={{
-              padding: '5px 8px',
-              border: '1px solid #dee2e6',
-              borderRadius: '4px',
-              fontSize: '13px'
-            }}
+            className="header-input-date"
           />
           <span style={{color: '#868e96', fontWeight: '500'}}>~</span>
           <input 
@@ -1642,12 +1682,7 @@ export default function PlannerPage() {
             id="endDate"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            style={{
-              padding: '5px 8px',
-              border: '1px solid #dee2e6',
-              borderRadius: '4px',
-              fontSize: '13px'
-            }}
+            className="header-input-date"
           />
           <div style={{marginLeft: '16px', display: 'flex', gap: '6px'}}>
             <button 
@@ -1753,7 +1788,7 @@ export default function PlannerPage() {
                 <div key={dayIndex} className="flex">
                   <div className="day-timebar" style={{
                     width: '30px',  // 35px에서 30px로 살짝 줄임
-                    background: 'linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%)',
+                    background: '#F7F8FA',
                     borderRight: '1px solid #dee2e6',
                     position: 'relative'
                   }}>
@@ -1926,13 +1961,8 @@ export default function PlannerPage() {
                                   left: '0',
                                   right: '0',
                                   height: `${Math.round((box.height || 60) / 10) * 10}px`, // 10분 단위 높이
-                                  background: box.category === 'food' ? 'linear-gradient(90deg, #FFF5E6 0%, #FFEFDD 100%)' :
-                                             box.category === 'transport' ? 'linear-gradient(90deg, #E6FFF5 0%, #DFFFF0 100%)' :
-                                             box.category === 'activity' ? 'linear-gradient(90deg, #EBF3FF 0%, #E1EDFF 100%)' :
-                                             box.category === 'sightseeing' ? 'linear-gradient(90deg, #F4EDFF 0%, #EDE4FF 100%)' :
-                                             box.category === 'shopping' ? 'linear-gradient(90deg, #FFEBF2 0%, #FFDFEA 100%)' :
-                                             box.category === 'accommodation' ? 'linear-gradient(90deg, #F0E9FF 0%, #E8DFFF 100%)' :
-                                             'linear-gradient(90deg, #F8F9FA 0%, #F1F3F5 100%)',
+                                  background: '#FFFFFF',
+                                  borderLeft: `4px solid ${getCategoryColor(box.category)}`,
                                   border: 'none',
                                   boxShadow: '0 2px 4px rgba(0, 0, 0, 0.06)',
                                   borderRadius: '0',
@@ -2096,23 +2126,29 @@ export default function PlannerPage() {
                                                 fontWeight: '600',
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '4px'
+                                                gap: '4px',
+                                                padding: '2px 4px',
+                                                background: 'rgba(255, 255, 255, 0.9)',
+                                                borderRadius: '4px',
+                                                marginBottom: '4px'
                                               }}>
                                                 <span style={{
                                                   display: 'inline-flex',
                                                   alignItems: 'center',
                                                   justifyContent: 'center',
-                                                  width: '16px',
-                                                  height: '16px',
+                                                  width: '20px',
+                                                  height: '20px',
                                                   borderRadius: '50%',
-                                                  backgroundColor: box.transportMode === 'car' ? '#3b82f6' : 
-                                                                   box.transportMode === 'public' ? '#10b981' : '#f59e0b',
+                                                  background: box.transportMode === 'car' ? '#3B82F6' :
+                                                             box.transportMode === 'public' ? '#22C55E' :
+                                                             '#F59E0B',
                                                   color: 'white',
-                                                  fontSize: '10px',
-                                                  fontWeight: 'bold'
+                                                  fontSize: '11px',
+                                                  fontWeight: 'bold',
+                                                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                                                 }}>
-                                                  {box.transportMode === 'car' ? 'C' : 
-                                                   box.transportMode === 'public' ? 'P' : 'W'}
+                                                  {box.transportMode === 'car' ? '🚗' : 
+                                                   box.transportMode === 'public' ? '🚌' : '🚶'}
                                                 </span>
                                                 <span style={{
                                                   flex: 1,
@@ -2324,17 +2360,34 @@ export default function PlannerPage() {
             >
               <button 
                 className="quick-btn cat-transport" 
-                onClick={createTransportBox}
+                onClick={(e) => {
+                  createTransportBox()
+                  // 시각적 피드백 - 버튼 애니메이션
+                  const btn = e.currentTarget
+                  btn.style.transform = 'scale(0.95)'
+                  setTimeout(() => {
+                    btn.style.transform = 'scale(1)'
+                  }, 100)
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(76, 175, 80, 0.3)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(76, 175, 80, 0.3)'
+                }}
                 style={{
                   padding: '6px 4px',
                   border: 'none',
                   borderRadius: '4px',
-                  background: '#4CAF50',
+                  background: '#22C55E',
                   color: 'white',
                   cursor: 'pointer',
                   fontSize: '11px',
                   fontWeight: '600',
-                  transition: 'all 0.2s ease',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transform: 'translateY(0)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -2754,7 +2807,10 @@ export default function PlannerPage() {
           isOpen={isModalOpen}
           planBox={currentPlanBox}
           onClose={() => setIsModalOpen(false)}
-          onSave={handleModalSave}
+          onSave={(updatedBox) => {
+            console.log('💾 이동 박스 저장 요청:', updatedBox)
+            savePlanBox(updatedBox)
+          }}
           placedBoxes={placedBoxes}
         />
       ) : (
@@ -2775,7 +2831,7 @@ export default function PlannerPage() {
             <div style={{
               padding: '18px 24px',
               borderBottom: '1px solid #e0e0e0',
-              background: 'linear-gradient(to bottom, #fff, #fafafa)'
+              background: '#FFFFFF'
             }}>
               <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
                 <h2 style={{fontSize: '20px', fontWeight: '600', color: '#212529'}}>

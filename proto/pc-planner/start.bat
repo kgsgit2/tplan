@@ -1,0 +1,9 @@
+@echo off
+echo Starting TPlan PC Prototype...
+echo.
+echo Opening in default browser...
+start index.html
+echo.
+echo Prototype is running!
+echo Press any key to exit...
+pause > nul

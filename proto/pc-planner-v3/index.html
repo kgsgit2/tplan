@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TPlan v3 - Modern Travel Planner</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-logo">
+        <div class="logo-mark">T</div>
+        <h1 class="logo-text">TPlan</h1>
+      </div>
+      
+      <div class="header-controls">
+        <div class="date-picker">
+          <span class="icon icon-sm">calendar_today</span>
+          <span>2025.01.15 - 2025.01.21</span>
+          <span class="text-muted text-small">(7일)</span>
+        </div>
+        
+        <button class="btn btn-primary">
+          <span class="icon icon-sm">save</span>
+          저장
+        </button>
+        
+        <button class="btn btn-secondary">
+          <span class="icon icon-sm">share</span>
+          공유
+        </button>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2 class="sidebar-title">플랜 박스</h2>
+          
+          <!-- Category Filters -->
+          <div class="category-filters">
+            <button class="category-filter active">
+              <span class="category-dot"></span>
+              전체
+            </button>
+            <button class="category-filter" data-category="food">
+              <span class="category-dot" style="background: var(--cat-food)"></span>
+              음식
+            </button>
+            <button class="category-filter" data-category="tour">
+              <span class="category-dot" style="background: var(--cat-tour)"></span>
+              관광
+            </button>
+            <button class="category-filter" data-category="shopping">
+              <span class="category-dot" style="background: var(--cat-shopping)"></span>
+              쇼핑
+            </button>
+            <button class="category-filter" data-category="hotel">
+              <span class="category-dot" style="background: var(--cat-hotel)"></span>
+              숙박
+            </button>
+            <button class="category-filter" data-category="transport">
+              <span class="category-dot" style="background: var(--cat-transport)"></span>
+              이동
+            </button>
+          </div>
+        </div>
+        
+        <!-- PlanBox List -->
+        <div class="planbox-list">
+          <!-- Food Items -->
+          <div class="planbox-card" data-category="food" draggable="true">
+            <div class="planbox-header">
+              <h3 class="planbox-title">이치란 라멘</h3>
+              <div class="planbox-actions">
+                <button class="planbox-action-btn">
+                  <span class="icon icon-sm">edit</span>
+                </button>
+                <button class="planbox-action-btn">
+                  <span class="icon icon-sm">content_copy</span>
+                </button>
+              </div>
+            </div>
+            <div class="planbox-meta">
+              <div class="planbox-meta-item">
+                <span class="icon planbox-meta-icon">schedule</span>
+                <span>1시간</span>
+              </div>
+              <div class="planbox-meta-item">
+                <span class="icon planbox-meta-icon">payments</span>
+                <span>¥1,500</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="planbox-card" data-category="food" draggable="true">
+            <div class="planbox-header">
+              <h3 class="planbox-title">스시 다이</h3>
+              <div class="planbox-actions">
+                <button class="planbox-action-btn">
+                  <span class="icon icon-sm">edit</span>
+                </button>
+                <button class="planbox-action-btn">
+                  <span class="icon icon-sm">content_copy</span>
+                </button>
+              </div>
+            </div>
+            <div class="planbox-meta">
+              <div class="planbox-meta-item">
+                <span class="icon planbox-meta-icon">schedule</span>
+                <span>2시간</span>
+              </div>
+              <div class="planbox-meta-item">
+                <span class="icon planbox-meta-icon">payments</span>
+                <span>¥5,000</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Tour Items -->
+          <div class="planbox-card" data-category="tour" draggable="true">
+            <div class="planbox-header">
+              <h3 class="planbox-title">센소지 관광</h3>
+              <div class="planbox-actions">
+                <button class="planbox-action-btn">
+                  <span class="icon icon-sm">edit</span>
+                </button>
+                <button class="planbox-action-btn">
+                  <span class="icon icon-sm">content_copy</span>
+                </button>
+              </div>
+            </div>
+            <div class="planbox-meta">
+              <div class="planbox-meta-item">
+                <span class="icon planbox-meta-icon">schedule</span>
+                <span>2시간</span>
+              </div>
+              <div class="planbox-meta-item">
+                <span class="icon planbox-meta-icon">payments</span>
+                <span>무료</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="planbox-card" data-category="tour" draggable="true">
+            <div class="planbox-header">
+              <h3 class="planbox-title">도쿄타워 전망대</h3>
+              <div class="planbox-actions">
+                <button class="planbox-action-btn">
+                  <span class="icon icon-sm">edit</span>
+                </button>
+                <button class="planbox-action-btn">
+                  <span class="icon icon-sm">content_copy</span>
+                </button>
+              </div>
+            </div>
+            <div class="planbox-meta">
+              <div class="planbox-meta-item">
+                <span class="icon planbox-meta-icon">schedule</span>
+                <span>1시간 30분</span>
+              </div>
+              <div class="planbox-meta-item">
+                <span class="icon planbox-meta-icon">payments</span>
+                <span>¥1,200</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Shopping Items -->
+          <div class="planbox-card" data-category="shopping" draggable="true">
+            <div class="planbox-header">
+              <h3 class="planbox-title">긴자 쇼핑</h3>
+              <div class="planbox-actions">
+                <button class="planbox-action-btn">
+                  <span class="icon icon-sm">edit</span>
+                </button>
+                <button class="planbox-action-btn">
+                  <span class="icon icon-sm">content_copy</span>
+                </button>
+              </div>
+            </div>
+            <div class="planbox-meta">
+              <div class="planbox-meta-item">
+                <span class="icon planbox-meta-icon">schedule</span>
+                <span>3시간</span>
+              </div>
+              <div class="planbox-meta-item">
+                <span class="icon planbox-meta-icon">payments</span>
+                <span>예산설정</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hotel Items -->
+          <div class="planbox-card" data-category="hotel" draggable="true">
+            <div class="planbox-header">
+              <h3 class="planbox-title">신주쿠 프린스 호텔</h3>
+              <div class="planbox-actions">
+                <button class="planbox-action-btn">
+                  <span class="icon icon-sm">edit</span>
+                </button>
+                <button class="planbox-action-btn">
+                  <span class="icon icon-sm">content_copy</span>
+                </button>
+              </div>
+            </div>
+            <div class="planbox-meta">
+              <div class="planbox-meta-item">
+                <span class="icon planbox-meta-icon">hotel</span>
+                <span>체크인</span>
+              </div>
+              <div class="planbox-meta-item">
+                <span class="icon planbox-meta-icon">payments</span>
+                <span>¥15,000/박</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Transport Items -->
+          <div class="planbox-card" data-category="transport" draggable="true">
+            <div class="planbox-header">
+              <h3 class="planbox-title">나리타공항 → 신주쿠</h3>
+              <div class="planbox-actions">
+                <button class="planbox-action-btn">
+                  <span class="icon icon-sm">edit</span>
+                </button>
+                <button class="planbox-action-btn">
+                  <span class="icon icon-sm">content_copy</span>
+                </button>
+              </div>
+            </div>
+            <div class="planbox-meta">
+              <div class="planbox-meta-item">
+                <span class="icon planbox-meta-icon">train</span>
+                <span>1시간 20분</span>
+              </div>
+              <div class="planbox-meta-item">
+                <span class="icon planbox-meta-icon">payments</span>
+                <span>¥3,250</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="planbox-card" data-category="transport" draggable="true">
+            <div class="planbox-header">
+              <h3 class="planbox-title">이동 시간</h3>
+              <div class="planbox-actions">
+                <button class="planbox-action-btn">
+                  <span class="icon icon-sm">edit</span>
+                </button>
+                <button class="planbox-action-btn">
+                  <span class="icon icon-sm">content_copy</span>
+                </button>
+              </div>
+            </div>
+            <div class="planbox-meta">
+              <div class="planbox-meta-item">
+                <span class="icon planbox-meta-icon">directions_walk</span>
+                <span>30분</span>
+              </div>
+              <div class="planbox-meta-item">
+                <span class="icon planbox-meta-icon">route</span>
+                <span>자동계산</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+      
+      <!-- Timeline -->
+      <div class="timeline-container">
+        <div class="timeline-wrapper">
+          <div class="timeline-grid">
+            <!-- Day Headers -->
+            <div class="day-headers">
+              <div style="width: 60px;"></div> <!-- Spacer for time labels -->
+              <div class="day-header">
+                <div class="day-label">Day 1</div>
+                <div class="day-date">1/15 (수)</div>
+              </div>
+              <div class="day-header">
+                <div class="day-label">Day 2</div>
+                <div class="day-date">1/16 (목)</div>
+              </div>
+              <div class="day-header">
+                <div class="day-label">Day 3</div>
+                <div class="day-date">1/17 (금)</div>
+              </div>
+              <div class="day-header">
+                <div class="day-label">Day 4</div>
+                <div class="day-date">1/18 (토)</div>
+              </div>
+              <div class="day-header">
+                <div class="day-label">Day 5</div>
+                <div class="day-date">1/19 (일)</div>
+              </div>
+              <div class="day-header">
+                <div class="day-label">Day 6</div>
+                <div class="day-date">1/20 (월)</div>
+              </div>
+              <div class="day-header">
+                <div class="day-label">Day 7</div>
+                <div class="day-date">1/21 (화)</div>
+              </div>
+            </div>
+            
+            <!-- Timeline Body -->
+            <div class="timeline-body">
+              <!-- Time Labels -->
+              <div class="time-labels">
+                <div class="time-label">07:00</div>
+                <div class="time-label">08:00</div>
+                <div class="time-label">09:00</div>
+                <div class="time-label">10:00</div>
+                <div class="time-label">11:00</div>
+                <div class="time-label">12:00</div>
+                <div class="time-label">13:00</div>
+                <div class="time-label">14:00</div>
+                <div class="time-label">15:00</div>
+                <div class="time-label">16:00</div>
+                <div class="time-label">17:00</div>
+                <div class="time-label">18:00</div>
+                <div class="time-label">19:00</div>
+                <div class="time-label">20:00</div>
+                <div class="time-label">21:00</div>
+                <div class="time-label">22:00</div>
+                <div class="time-label">23:00</div>
+              </div>
+              
+              <!-- Day Columns -->
+              <div class="day-columns">
+                <!-- Day 1 -->
+                <div class="day-column" data-day="0">
+                  <div class="time-slot" data-hour="7"></div>
+                  <div class="time-slot" data-hour="8"></div>
+                  <div class="time-slot" data-hour="9"></div>
+                  <div class="time-slot" data-hour="10"></div>
+                  <div class="time-slot" data-hour="11"></div>
+                  <div class="time-slot" data-hour="12"></div>
+                  <div class="time-slot" data-hour="13"></div>
+                  <div class="time-slot" data-hour="14">
+                    <!-- Example placed item -->
+                    <div class="placed-planbox" data-category="transport" style="top: 30px; height: 80px;">
+                      <div class="placed-planbox-title">나리타공항 → 신주쿠</div>
+                      <div class="placed-planbox-time">14:30 - 15:50</div>
+                      <div class="resize-handle top"></div>
+                      <div class="resize-handle bottom"></div>
+                    </div>
+                  </div>
+                  <div class="time-slot" data-hour="15"></div>
+                  <div class="time-slot" data-hour="16">
+                    <!-- Example placed item -->
+                    <div class="placed-planbox" data-category="hotel" style="top: 0px; height: 30px;">
+                      <div class="placed-planbox-title">호텔 체크인</div>
+                      <div class="placed-planbox-time">16:00 - 16:30</div>
+                      <div class="resize-handle top"></div>
+                      <div class="resize-handle bottom"></div>
+                    </div>
+                  </div>
+                  <div class="time-slot" data-hour="17"></div>
+                  <div class="time-slot" data-hour="18">
+                    <!-- Example placed item -->
+                    <div class="placed-planbox" data-category="food" style="top: 0px; height: 60px;">
+                      <div class="placed-planbox-title">이치란 라멘</div>
+                      <div class="placed-planbox-time">18:00 - 19:00</div>
+                      <div class="resize-handle top"></div>
+                      <div class="resize-handle bottom"></div>
+                    </div>
+                  </div>
+                  <div class="time-slot" data-hour="19"></div>
+                  <div class="time-slot" data-hour="20"></div>
+                  <div class="time-slot" data-hour="21"></div>
+                  <div class="time-slot" data-hour="22"></div>
+                  <div class="time-slot" data-hour="23"></div>
+                </div>
+                
+                <!-- Day 2 -->
+                <div class="day-column" data-day="1">
+                  <div class="time-slot" data-hour="7"></div>
+                  <div class="time-slot" data-hour="8"></div>
+                  <div class="time-slot" data-hour="9">
+                    <!-- Example placed item -->
+                    <div class="placed-planbox" data-category="tour" style="top: 0px; height: 120px;">
+                      <div class="placed-planbox-title">센소지 관광</div>
+                      <div class="placed-planbox-time">09:00 - 11:00</div>
+                      <div class="resize-handle top"></div>
+                      <div class="resize-handle bottom"></div>
+                    </div>
+                  </div>
+                  <div class="time-slot" data-hour="10"></div>
+                  <div class="time-slot" data-hour="11"></div>
+                  <div class="time-slot" data-hour="12"></div>
+                  <div class="time-slot" data-hour="13"></div>
+                  <div class="time-slot" data-hour="14"></div>
+                  <div class="time-slot" data-hour="15"></div>
+                  <div class="time-slot" data-hour="16"></div>
+                  <div class="time-slot" data-hour="17"></div>
+                  <div class="time-slot" data-hour="18"></div>
+                  <div class="time-slot" data-hour="19"></div>
+                  <div class="time-slot" data-hour="20"></div>
+                  <div class="time-slot" data-hour="21"></div>
+                  <div class="time-slot" data-hour="22"></div>
+                  <div class="time-slot" data-hour="23"></div>
+                </div>
+                
+                <!-- Day 3-7 (empty for now) -->
+                <div class="day-column" data-day="2">
+                  <div class="time-slot" data-hour="7"></div>
+                  <div class="time-slot" data-hour="8"></div>
+                  <div class="time-slot" data-hour="9"></div>
+                  <div class="time-slot" data-hour="10"></div>
+                  <div class="time-slot" data-hour="11"></div>
+                  <div class="time-slot" data-hour="12"></div>
+                  <div class="time-slot" data-hour="13"></div>
+                  <div class="time-slot" data-hour="14"></div>
+                  <div class="time-slot" data-hour="15"></div>
+                  <div class="time-slot" data-hour="16"></div>
+                  <div class="time-slot" data-hour="17"></div>
+                  <div class="time-slot" data-hour="18"></div>
+                  <div class="time-slot" data-hour="19"></div>
+                  <div class="time-slot" data-hour="20"></div>
+                  <div class="time-slot" data-hour="21"></div>
+                  <div class="time-slot" data-hour="22"></div>
+                  <div class="time-slot" data-hour="23"></div>
+                </div>
+                
+                <div class="day-column" data-day="3">
+                  <div class="time-slot" data-hour="7"></div>
+                  <div class="time-slot" data-hour="8"></div>
+                  <div class="time-slot" data-hour="9"></div>
+                  <div class="time-slot" data-hour="10"></div>
+                  <div class="time-slot" data-hour="11"></div>
+                  <div class="time-slot" data-hour="12"></div>
+                  <div class="time-slot" data-hour="13"></div>
+                  <div class="time-slot" data-hour="14"></div>
+                  <div class="time-slot" data-hour="15"></div>
+                  <div class="time-slot" data-hour="16"></div>
+                  <div class="time-slot" data-hour="17"></div>
+                  <div class="time-slot" data-hour="18"></div>
+                  <div class="time-slot" data-hour="19"></div>
+                  <div class="time-slot" data-hour="20"></div>
+                  <div class="time-slot" data-hour="21"></div>
+                  <div class="time-slot" data-hour="22"></div>
+                  <div class="time-slot" data-hour="23"></div>
+                </div>
+                
+                <div class="day-column" data-day="4">
+                  <div class="time-slot" data-hour="7"></div>
+                  <div class="time-slot" data-hour="8"></div>
+                  <div class="time-slot" data-hour="9"></div>
+                  <div class="time-slot" data-hour="10"></div>
+                  <div class="time-slot" data-hour="11"></div>
+                  <div class="time-slot" data-hour="12"></div>
+                  <div class="time-slot" data-hour="13"></div>
+                  <div class="time-slot" data-hour="14"></div>
+                  <div class="time-slot" data-hour="15"></div>
+                  <div class="time-slot" data-hour="16"></div>
+                  <div class="time-slot" data-hour="17"></div>
+                  <div class="time-slot" data-hour="18"></div>
+                  <div class="time-slot" data-hour="19"></div>
+                  <div class="time-slot" data-hour="20"></div>
+                  <div class="time-slot" data-hour="21"></div>
+                  <div class="time-slot" data-hour="22"></div>
+                  <div class="time-slot" data-hour="23"></div>
+                </div>
+                
+                <div class="day-column" data-day="5">
+                  <div class="time-slot" data-hour="7"></div>
+                  <div class="time-slot" data-hour="8"></div>
+                  <div class="time-slot" data-hour="9"></div>
+                  <div class="time-slot" data-hour="10"></div>
+                  <div class="time-slot" data-hour="11"></div>
+                  <div class="time-slot" data-hour="12"></div>
+                  <div class="time-slot" data-hour="13"></div>
+                  <div class="time-slot" data-hour="14"></div>
+                  <div class="time-slot" data-hour="15"></div>
+                  <div class="time-slot" data-hour="16"></div>
+                  <div class="time-slot" data-hour="17"></div>
+                  <div class="time-slot" data-hour="18"></div>
+                  <div class="time-slot" data-hour="19"></div>
+                  <div class="time-slot" data-hour="20"></div>
+                  <div class="time-slot" data-hour="21"></div>
+                  <div class="time-slot" data-hour="22"></div>
+                  <div class="time-slot" data-hour="23"></div>
+                </div>
+                
+                <div class="day-column" data-day="6">
+                  <div class="time-slot" data-hour="7"></div>
+                  <div class="time-slot" data-hour="8"></div>
+                  <div class="time-slot" data-hour="9"></div>
+                  <div class="time-slot" data-hour="10"></div>
+                  <div class="time-slot" data-hour="11"></div>
+                  <div class="time-slot" data-hour="12"></div>
+                  <div class="time-slot" data-hour="13"></div>
+                  <div class="time-slot" data-hour="14"></div>
+                  <div class="time-slot" data-hour="15"></div>
+                  <div class="time-slot" data-hour="16"></div>
+                  <div class="time-slot" data-hour="17"></div>
+                  <div class="time-slot" data-hour="18"></div>
+                  <div class="time-slot" data-hour="19"></div>
+                  <div class="time-slot" data-hour="20"></div>
+                  <div class="time-slot" data-hour="21"></div>
+                  <div class="time-slot" data-hour="22"></div>
+                  <div class="time-slot" data-hour="23"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Time Badge (shown during drag) -->
+  <div class="time-badge" id="timeBadge" style="display: none;"></div>
+  
+  <!-- JavaScript -->
+  <script src="app.js"></script>
+</body>
+</html>

@@ -34,7 +34,9 @@ Thumbs.db
 *.temp
 
 # Claude Code
-.claude/
+# Claude 설정은 추적하되 로컬 설정은 제외
+.claude/settings.local.json
+.claude/agents/
 
 # Vercel
 .vercelmcp-servers/

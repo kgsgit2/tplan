@@ -1,0 +1,14 @@
+{
+  "lastWork": {
+    "timestamp": "2025-09-13T06:08:37.258Z",
+    "computer": "KGSUP-KGSUP",
+    "message": "작업 종료",
+    "git": {
+      "branch": "main",
+      "hasChanges": true
+    },
+    "typescript": {
+      "errors": 99
+    }
+  }
+}
