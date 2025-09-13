@@ -36,7 +36,8 @@ Thumbs.db
 # Claude Code
 # Claude 설정은 추적하되 로컬 설정은 제외
 .claude/settings.local.json
-.claude/agents/
+# agents 폴더는 공유하도록 주석 처리
+# .claude/agents/
 
 # Vercel
 .vercelmcp-servers/

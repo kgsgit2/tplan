@@ -57,3 +57,8 @@
 **작업 내용**: GitHub 정리 완료 - README 현대화, claude-sessions 브랜치 삭제
 
 ---
+
+### 🕐 오후 06:46 - 1층
+**작업 내용**: Agent 파일들 Git 공유 설정 - .gitignore 수정으로 agents 폴더 동기화 가능
+
+---
