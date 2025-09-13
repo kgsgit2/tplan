@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPlan Redesign Prototype v2</title>
+    <style>
+        :root {
+            --color-transport: #3B82F6; --color-food: #F59E0B; --color-tourism: #10B981;
+            --color-accommodation: #6366F1; --color-shopping: #E91E63; --color-activity: #2196F3;
+            --color-custom: #1976D2; --space-md: 16px; --text-base: 16px;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --background-color: #f8f9fa; --surface-color: #ffffff; --border-color: #dee2e6;
+            --text-color: #212529; --text-muted-color: #6c757d; --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        body { font-family: var(--font-family); background-color: var(--background-color); color: var(--text-color); margin: 0; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
+        .main-content { display: flex; gap: var(--space-md); flex-grow: 1; overflow: hidden; padding: var(--space-md); }
+        .sidebar { width: 280px; flex-shrink: 0; background-color: var(--surface-color); border-radius: 8px; box-shadow: var(--shadow); padding: var(--space-md); overflow-y: auto; }
+        .timeline-wrapper { flex-grow: 1; background-color: var(--surface-color); border-radius: 8px; box-shadow: var(--shadow); padding: var(--space-md); overflow: auto; }
+        .plan-box { padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; border-left: 5px solid; background-color: #f8f9fa; cursor: grab; transition: background-color 0.2s, box-shadow 0.2s; position: relative; }
+        .plan-box:hover { background-color: #e9ecef; }
+        .plan-box.dragging { opacity: 0.5; cursor: grabbing; }
+        .plan-box h3 { font-size: 15px; margin: 0 0 4px 0; }
+        .plan-box p { font-size: 13px; color: var(--text-muted-color); margin: 0; }
+        .timeline { display: grid; grid-template-columns: 50px repeat(3, 1fr); min-height: 100%; }
+        .timeline-header { text-align: center; padding: 8px; font-weight: 600; position: sticky; top: 0; background: var(--surface-color); z-index: 20; }
+        .time-label-col { display: grid; grid-template-rows: repeat(16, 60px); }
+        .time-label { font-size: 12px; text-align: right; padding-right: 8px; color: var(--text-muted-color); height: 60px; display: flex; align-items: center; justify-content: flex-end; }
+        .day-column { position: relative; border-left: 1px solid var(--border-color); }
+        .time-slot { height: 60px; border-bottom: 1px dotted var(--border-color); box-sizing: border-box; }
+        .time-slot.drag-over { background-color: #e0f7fa; }
+        .placed-box { position: absolute; width: calc(100% - 10px); left: 5px; background: white; padding: 4px 8px; border-radius: 4px; box-shadow: var(--shadow); z-index: 10; cursor: move; display: flex; flex-direction: column; justify-content: space-between; }
+        .placed-box.resizing { transition: none; }
+        .resize-handle { position: absolute; left: 0; right: 0; height: 8px; z-index: 11; }
+        .resize-handle.top { top: -4px; cursor: ns-resize; }
+        .resize-handle.bottom { bottom: -4px; cursor: ns-resize; }
+        #time-badge { position: fixed; background: #ff4757; color: white; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; z-index: 9999; pointer-events: none; white-space: nowrap; display: none; }
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; visibility: hidden; opacity: 0; transition: opacity 0.3s, visibility 0.3s; }
+        .modal-backdrop.visible { visibility: visible; opacity: 1; }
+        .modal { background-color: var(--surface-color); padding: 24px; border-radius: 8px; width: 90%; max-width: 500px; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: var(--text-base); }
+        .btn-primary { background-color: var(--color-custom); color: white; }
+        .btn-secondary { background-color: #e9ecef; }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="timeline-wrapper">
+            <div class="timeline" id="timeline">
+                <div class="timeline-header">Time</div>
+                <div class="timeline-header">Day 1</div>
+                <div class="timeline-header">Day 2</div>
+                <div class="timeline-header">Day 3</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="time-badge"></div>
+
+    <div class="modal-backdrop" id="editModal">
+        <div class="modal">
+            <h2 id="modalTitle">Edit Plan</h2>
+            <input type="hidden" id="planIdInput">
+            <div class="form-group"><label for="planTitleInput">Title</label><input type="text" id="planTitleInput"></div>
+            <div class="form-group"><label for="planDurationInput">Duration (minutes)</label><input type="number" id="planDurationInput" step="10"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                <button class="btn btn-primary" id="saveBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebarEl = document.getElementById('sidebar');
+            const timelineEl = document.getElementById('timeline');
+            const timeBadgeEl = document.getElementById('time-badge');
+            const modalEl = document.getElementById('editModal');
+
+            const PIXELS_PER_MINUTE = 1; // 60px per hour
+
+            let state = {
+                planLibrary: [
+                    { id: `lib-1`, title: '공항철도', durationMinutes: 60, category: 'transport' },
+                    { id: `lib-2`, title: '점심: 스시', durationMinutes: 90, category: 'food' },
+                    { id: `lib-3`, title: '박물관 관람', durationMinutes: 120, category: 'tourism' },
+                ],
+                placedPlans: [
+                    { id: `placed-1`, title: '호텔 체크인', durationMinutes: 40, category: 'accommodation', day: 1, startMinutes: 9 * 60 },
+                ],
+            };
+
+            let dragContext = { draggedId: null, source: null, isResizing: false, resizeHandle: null, originalY: 0, originalHeight: 0, originalStart: 0 };
+
+            function formatTime(totalMinutes) {
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+            }
+
+            function updateTimeBadge(event, plan) {
+                const timelineRect = timelineEl.getBoundingClientRect();
+                const y = event.clientY - timelineRect.top;
+                const currentMinutes = Math.round((y - 32) / PIXELS_PER_MINUTE / 10) * 10; // 32 is header height
+                
+                const start = formatTime(currentMinutes);
+                const end = formatTime(currentMinutes + plan.durationMinutes);
+
+                timeBadgeEl.style.display = 'block';
+                timeBadgeEl.style.left = `${event.clientX + 20}px`;
+                timeBadgeEl.style.top = `${event.clientY - 15}px`;
+                timeBadgeEl.textContent = `${start} ~ ${end}`;
+            }
+
+            function render() {
+                // Render Sidebar
+                sidebarEl.innerHTML = '<h2>Plan Library</h2>';
+                state.planLibrary.forEach(plan => {
+                    const div = document.createElement('div');
+                    div.className = 'plan-box';
+                    div.id = plan.id;
+                    div.draggable = true;
+                    div.style.borderColor = `var(--color-${plan.category})`;
+                    div.innerHTML = `<h3>${plan.title}</h3><p>${plan.durationMinutes} min</p>`;
+                    div.addEventListener('dragstart', (e) => {
+                        dragContext = { ...dragContext, draggedId: plan.id, source: 'library' };
+                        e.target.classList.add('dragging');
+                    });
+                    div.addEventListener('dragend', (e) => e.target.classList.remove('dragging'));
+                    sidebarEl.appendChild(div);
+                });
+
+                // Clear and Render Timeline
+                document.querySelectorAll('.day-column').forEach(c => c.remove());
+                document.querySelectorAll('.time-label-col').forEach(c => c.remove());
+
+                const timeLabelCol = document.createElement('div');
+                timeLabelCol.className = 'time-label-col';
+                for (let i = 7; i < 23; i++) { // 7 AM to 10 PM
+                    const label = document.createElement('div');
+                    label.className = 'time-label';
+                    label.textContent = `${i}:00`;
+                    timeLabelCol.appendChild(label);
+                }
+                timelineEl.appendChild(timeLabelCol);
+
+                for (let day = 1; day <= 3; day++) {
+                    const dayCol = document.createElement('div');
+                    dayCol.className = 'day-column';
+                    dayCol.dataset.day = day;
+
+                    for (let i = 7; i < 23; i++) {
+                        const slot = document.createElement('div');
+                        slot.className = 'time-slot';
+                        dayCol.appendChild(slot);
+                    }
+
+                    state.placedPlans.filter(p => p.day === day).forEach(plan => {
+                        const div = document.createElement('div');
+                        div.className = 'placed-box';
+                        div.id = plan.id;
+                        div.style.top = `${plan.startMinutes * PIXELS_PER_MINUTE}px`;
+                        div.style.height = `${plan.durationMinutes * PIXELS_PER_MINUTE}px`;
+                        div.style.borderLeft = `5px solid var(--color-${plan.category})`;
+                        div.innerHTML = `
+                            <div class="resize-handle top"></div>
+                            <div style="flex-grow:1; overflow:hidden;">
+                                <h3>${plan.title}</h3>
+                                <p>${formatTime(plan.startMinutes)} - ${formatTime(plan.startMinutes + plan.durationMinutes)}</p>
+                            </div>
+                            <div class="resize-handle bottom"></div>
+                        `;
+                        div.draggable = true;
+                        div.addEventListener('dragstart', (e) => {
+                            e.stopPropagation();
+                            dragContext = { ...dragContext, draggedId: plan.id, source: 'timeline' };
+                            e.target.classList.add('dragging');
+                        });
+                        div.addEventListener('dragend', (e) => e.target.classList.remove('dragging'));
+                        div.addEventListener('dblclick', () => openModal(plan.id));
+                        
+                        div.querySelector('.resize-handle.top').addEventListener('mousedown', (e) => {
+                            e.stopPropagation();
+                            dragContext = { ...dragContext, isResizing: true, resizeHandle: 'top', draggedId: plan.id, originalY: e.clientY, originalHeight: plan.durationMinutes, originalStart: plan.startMinutes };
+                        });
+                        div.querySelector('.resize-handle.bottom').addEventListener('mousedown', (e) => {
+                            e.stopPropagation();
+                            dragContext = { ...dragContext, isResizing: true, resizeHandle: 'bottom', draggedId: plan.id, originalY: e.clientY, originalHeight: plan.durationMinutes };
+                        });
+
+                        dayCol.appendChild(div);
+                    });
+                    timelineEl.appendChild(dayCol);
+                }
+            }
+
+            // Global Drag/Resize Handlers
+            document.addEventListener('mousemove', (e) => {
+                if (!dragContext.isResizing) return;
+                e.preventDefault();
+                const plan = state.placedPlans.find(p => p.id === dragContext.draggedId);
+                if (!plan) return;
+
+                const deltaY = e.clientY - dragContext.originalY;
+                const deltaMinutes = Math.round(deltaY / PIXELS_PER_MINUTE / 10) * 10;
+
+                if (dragContext.resizeHandle === 'bottom') {
+                    plan.durationMinutes = Math.max(30, dragContext.originalHeight + deltaMinutes);
+                } else if (dragContext.resizeHandle === 'top') {
+                    const newStart = dragContext.originalStart + deltaMinutes;
+                    const newDuration = dragContext.originalHeight - deltaMinutes;
+                    if (newDuration >= 30) {
+                        plan.startMinutes = newStart;
+                        plan.durationMinutes = newDuration;
+                    }
+                }
+                updateTimeBadge(e, plan);
+                render();
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (dragContext.isResizing) {
+                    dragContext = { ...dragContext, isResizing: false, draggedId: null };
+                    timeBadgeEl.style.display = 'none';
+                }
+            });
+
+            timelineEl.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const target = e.target.closest('.day-column');
+                if (!target || !dragContext.draggedId) return;
+
+                const plan = state.planLibrary.find(p => p.id === dragContext.draggedId) || state.placedPlans.find(p => p.id === dragContext.draggedId);
+                if (plan) updateTimeBadge(e, plan);
+            });
+
+            timelineEl.addEventListener('drop', (e) => {
+                e.preventDefault();
+                timeBadgeEl.style.display = 'none';
+                const dayColumn = e.target.closest('.day-column');
+                if (!dayColumn || !dragContext.draggedId) return;
+
+                const day = parseInt(dayColumn.dataset.day);
+                const timelineRect = dayColumn.getBoundingClientRect();
+                const y = e.clientY - timelineRect.top;
+                const startMinutes = Math.round(y / PIXELS_PER_MINUTE / 10) * 10;
+
+                if (dragContext.source === 'library') {
+                    const sourcePlan = state.planLibrary.find(p => p.id === dragContext.draggedId);
+                    if (sourcePlan) {
+                        const newPlan = { ...sourcePlan, id: `placed-${Date.now()}`, day, startMinutes };
+                        state.placedPlans.push(newPlan);
+                    }
+                } else if (dragContext.source === 'timeline') {
+                    const planToMove = state.placedPlans.find(p => p.id === dragContext.draggedId);
+                    if (planToMove) {
+                        planToMove.day = day;
+                        planToMove.startMinutes = startMinutes;
+                    }
+                }
+                dragContext = { ...dragContext, draggedId: null, source: null };
+                render();
+            });
+
+            // Modal Logic
+            const openModal = (planId) => {
+                const plan = state.placedPlans.find(p => p.id === planId);
+                if (!plan) return;
+                document.getElementById('planIdInput').value = plan.id;
+                document.getElementById('modalTitle').textContent = `Edit: ${plan.title}`;
+                document.getElementById('planTitleInput').value = plan.title;
+                document.getElementById('planDurationInput').value = plan.durationMinutes;
+                modalEl.classList.add('visible');
+            };
+
+            const closeModal = () => modalEl.classList.remove('visible');
+            document.getElementById('cancelBtn').addEventListener('click', closeModal);
+            document.getElementById('saveBtn').addEventListener('click', () => {
+                const id = document.getElementById('planIdInput').value;
+                const plan = state.placedPlans.find(p => p.id === id);
+                if (plan) {
+                    plan.title = document.getElementById('planTitleInput').value;
+                    plan.durationMinutes = parseInt(document.getElementById('planDurationInput').value);
+                }
+                closeModal();
+                render();
+            });
+
+            render();
+        });
+    </script>
+</body>
+</html>

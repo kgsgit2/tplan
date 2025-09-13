@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPlan Redesign Prototype</title>
+    <style>
+        :root {
+            /* Semantic color palette from UX Audit */
+            --color-transport: #3B82F6;
+            --color-food: #F59E0B;
+            --color-tourism: #10B981;
+            --color-accommodation: #6366F1;
+            --color-shopping: #E91E63;
+            --color-activity: #2196F3;
+            --color-custom: #1976D2;
+
+            /* Spacing scale */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+
+            /* Typography */
+            --text-sm: 14px;
+            --text-base: 16px;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            
+            /* General UI */
+            --background-color: #f8f9fa;
+            --surface-color: #ffffff;
+            --border-color: #dee2e6;
+            --text-color: #212529;
+            --text-muted-color: #6c757d;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: var(--space-md);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        h1, h2, h3 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-sm) var(--space-md);
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin-bottom: var(--space-md);
+        }
+
+        .header h1 {
+            font-size: 24px;
+        }
+
+        .main-content {
+            display: flex;
+            gap: var(--space-md);
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: var(--space-md);
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            font-size: 20px;
+            margin-bottom: var(--space-md);
+        }
+
+        .plan-box {
+            padding: var(--space-sm) var(--space-md);
+            border-radius: 6px;
+            margin-bottom: var(--space-sm);
+            border-left: 5px solid;
+            background-color: #f8f9fa;
+            cursor: grab;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .plan-box:hover {
+            background-color: #e9ecef;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .plan-box.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        .plan-box h3 {
+            font-size: var(--text-base);
+            margin-bottom: var(--space-xs);
+        }
+
+        .plan-box p {
+            font-size: var(--text-sm);
+            color: var(--text-muted-color);
+            margin: 0;
+        }
+
+        .timeline-wrapper {
+            flex-grow: 1;
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: var(--space-md);
+            overflow: auto;
+        }
+        
+        .timeline {
+            display: grid;
+            grid-template-columns: 50px repeat(3, 1fr); /* Time labels + 3 days */
+            gap: var(--space-xs);
+        }
+
+        .timeline-header {
+            text-align: center;
+            padding: var(--space-sm);
+            font-weight: 600;
+        }
+
+        .time-label {
+            font-size: 12px;
+            text-align: right;
+            padding-right: var(--space-sm);
+            color: var(--text-muted-color);
+        }
+
+        .day-column {
+            display: grid;
+            grid-template-rows: repeat(10, 60px); /* 10 hours, 60px each */
+            border-left: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+        }
+        
+        .time-slot {
+            border-bottom: 1px dotted var(--border-color);
+            transition: background-color 0.2s;
+        }
+
+        .time-slot.drag-over {
+            background-color: #e0f7fa;
+        }
+        
+        .placed-box {
+            position: relative;
+            height: 100%;
+            width: 95%;
+            margin: 0 auto;
+            z-index: 10;
+        }
+
+        /* Modal Styles */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .modal-backdrop.visible {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal {
+            background-color: var(--surface-color);
+            padding: var(--space-lg);
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            width: 90%;
+            max-width: 500px;
+            transform: scale(0.95);
+            transition: transform 0.3s;
+        }
+        
+        .modal-backdrop.visible .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-md);
+        }
+        
+        .modal-header h2 {
+            font-size: 22px;
+        }
+
+        .close-button {
+            font-size: 24px;
+            font-weight: bold;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: var(--text-muted-color);
+        }
+        
+        .modal-body .form-group {
+            margin-bottom: var(--space-md);
+        }
+        
+        .modal-body label {
+            display: block;
+            margin-bottom: var(--space-sm);
+            font-weight: 500;
+        }
+        
+        .modal-body input, .modal-body select {
+            width: 100%;
+            padding: var(--space-sm);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: var(--text-base);
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: var(--space-sm);
+            margin-top: var(--space-lg);
+        }
+        
+        .btn {
+            padding: var(--space-sm) var(--space-md);
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: var(--text-base);
+            font-weight: 500;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn-primary {
+            background-color: var(--color-custom);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1565C0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .btn-secondary {
+            background-color: #e9ecef;
+            color: var(--text-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #ced4da;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <h1>TPlan Redesign</h1>
+        <button class="btn btn-primary" id="openModalBtn">Add Custom Plan</button>
+    </header>
+
+    <div class="main-content">
+        <aside class="sidebar" id="sidebar">
+            <h2>Plan Library</h2>
+            <!-- Sample plan boxes will be injected here by JS -->
+        </aside>
+
+        <div class="timeline-wrapper">
+            <div class="timeline" id="timeline">
+                <div class="timeline-header">Time</div>
+                <div class="timeline-header">Day 1</div>
+                <div class="timeline-header">Day 2</div>
+                <div class="timeline-header">Day 3</div>
+                
+                <!-- Time labels and grid will be injected here by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-backdrop" id="editModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Edit Plan</h2>
+                <button class="close-button" id="closeModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="planTitle">Title</label>
+                    <input type="text" id="planTitle" value="Sample Plan">
+                </div>
+                <div class="form-group">
+                    <label for="planCategory">Category</label>
+                    <select id="planCategory">
+                        <option value="transport">Transport</option>
+                        <option value="food">Food</option>
+                        <option value="tourism">Tourism</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                <button class="btn btn-primary" id="saveBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const plans = [
+                { id: 'plan-1', title: '공항철도', duration: '1h', category: 'transport' },
+                { id: 'plan-2', title: '점심: 스시', duration: '1.5h', category: 'food' },
+                { id: 'plan-3', title: '박물관 관람', duration: '2h', category: 'tourism' },
+                { id: 'plan-4', title: '호텔 체크인', duration: '0.5h', category: 'accommodation' },
+                { id: 'plan-5', title: '기념품 쇼핑', duration: '1h', category: 'shopping' },
+            ];
+
+            const categoryColors = {
+                transport: 'var(--color-transport)',
+                food: 'var(--color-food)',
+                tourism: 'var(--color-tourism)',
+                accommodation: 'var(--color-accommodation)',
+                shopping: 'var(--color-shopping)',
+                activity: 'var(--color-activity)',
+                custom: 'var(--color-custom)',
+            };
+
+            const sidebar = document.getElementById('sidebar');
+            const timeline = document.getElementById('timeline');
+
+            // 1. Populate Sidebar
+            plans.forEach(plan => {
+                const div = document.createElement('div');
+                div.className = 'plan-box';
+                div.id = plan.id;
+                div.draggable = true;
+                div.style.borderColor = categoryColors[plan.category];
+                div.innerHTML = `<h3>${plan.title}</h3><p>${plan.duration}</p>`;
+                sidebar.appendChild(div);
+            });
+
+            // 2. Generate Timeline Grid
+            const hours = 10; // 9 AM to 6 PM
+            for (let i = 0; i < hours; i++) {
+                const timeLabel = document.createElement('div');
+                timeLabel.className = 'time-label';
+                timeLabel.innerText = `${i + 9}:00`;
+                timeline.appendChild(timeLabel);
+
+                for (let j = 0; j < 3; j++) { // 3 days
+                    const timeSlot = document.createElement('div');
+                    timeSlot.className = 'time-slot';
+                    timeSlot.dataset.day = j + 1;
+                    timeSlot.dataset.hour = i + 9;
+                    timeline.appendChild(timeSlot);
+                }
+            }
+            
+            // 3. Modal Logic
+            const modal = document.getElementById('editModal');
+            const openModalBtn = document.getElementById('openModalBtn');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+
+            const openModal = () => modal.classList.add('visible');
+            const closeModal = () => modal.classList.remove('visible');
+
+            openModalBtn.addEventListener('click', openModal);
+            closeModalBtn.addEventListener('click', closeModal);
+            cancelBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+
+            // 4. Drag and Drop Logic
+            let draggedItemId = null;
+
+            document.addEventListener('dragstart', (e) => {
+                if (e.target.classList.contains('plan-box')) {
+                    draggedItemId = e.target.id;
+                    setTimeout(() => {
+                        e.target.classList.add('dragging');
+                    }, 0);
+                }
+            });
+
+            document.addEventListener('dragend', (e) => {
+                if (e.target.classList.contains('plan-box')) {
+                    e.target.classList.remove('dragging');
+                }
+            });
+
+            timeline.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                if (e.target.classList.contains('time-slot')) {
+                    e.target.classList.add('drag-over');
+                }
+            });
+
+            timeline.addEventListener('dragleave', (e) => {
+                if (e.target.classList.contains('time-slot')) {
+                    e.target.classList.remove('drag-over');
+                }
+            });
+
+            timeline.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const dropTarget = e.target;
+                if (dropTarget.classList.contains('time-slot') && draggedItemId) {
+                    dropTarget.classList.remove('drag-over');
+                    const draggedElement = document.getElementById(draggedItemId);
+                    
+                    // Prevent dropping multiple times
+                    if (draggedElement && dropTarget.childElementCount === 0) {
+                        const newBox = draggedElement.cloneNode(true);
+                        newBox.classList.remove('dragging');
+                        newBox.classList.add('placed-box');
+                        newBox.draggable = false;
+                        newBox.addEventListener('dblclick', openModal); // Double click to edit
+                        dropTarget.appendChild(newBox);
+                        
+                        // Optional: remove from sidebar
+                        // draggedElement.remove();
+                    }
+                    draggedItemId = null;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

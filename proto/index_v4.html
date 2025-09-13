@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPlan Redesign Prototype v4 - High Fidelity</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        /* globals.css content copied here for 1:1 visual fidelity */
+        /* Google Material Icons */
+        @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+        @import url('https://fonts.googleapis.com/icon?family=Material+Icons+Outlined');
+
+        /* TIMEPLANBOX ADAPTIVE v10.0 - COMPLETE PROTOTYPE STYLES */
+        :root {
+            --md-green: #4CAF50; --md-blue: #2196F3; --md-purple: #9C27B0;
+            --md-orange: #FF9800; --md-pink: #E91E63; --md-deep-purple: #673AB7;
+            --md-primary: #1976D2; --md-grey: #9E9E9E; --md-light-grey: #F5F5F5;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f8f9fa; color: #212529; overflow: hidden; user-select: none;
+        }
+        .header {
+            height: 56px; background: #fff; border-bottom: 2px solid #e9ecef;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+        .header-logo { display: flex; align-items: center; gap: 12px; }
+        .logo-icon {
+            width: 32px; height: 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; font-size: 16px;
+        }
+        .header-controls { display: flex; gap: 12px; align-items: center; }
+        .header-controls input {
+            background: #f8f9fa; border: 2px solid #e9ecef; color: #495057;
+            padding: 8px 14px; font-size: 14px; border-radius: 8px; transition: all 0.2s; font-weight: 500;
+        }
+        .header-controls input:focus {
+            outline: none; border-color: #667eea; background: #fff;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .btn-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; border: none;
+            padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        .btn-header:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+        .main-layout { display: grid; grid-template-columns: 1fr 320px; height: calc(100vh - 56px); background: #f8f9fa; }
+        .timeline-area { background: #fff; overflow: auto; position: relative; }
+        .timeline-container { display: flex; min-width: fit-content; position: relative; padding-bottom: 20px; }
+        .day-columns { display: flex; }
+        .day-column { width: 150px; border-right: 1px solid #e9ecef; position: relative; background: #fff; }
+        .day-header {
+            height: 48px; background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+            border-bottom: 2px solid #e9ecef; display: flex; align-items: center; justify-content: center;
+            font-size: 13px; color: #495057; font-weight: 700; position: sticky; top: 0; z-index: 10;
+        }
+        .time-grid { position: relative; }
+        .time-slot { height: 60px; border-bottom: 1px solid #f1f3f5; position: relative; }
+        .time-slot::before, .time-slot::after {
+            content: ''; position: absolute; left: 0; right: 0; height: 1px;
+            background: #f8f9fa; pointer-events: none;
+        }
+        .time-slot::before { top: 33.33%; }
+        .time-slot::after { top: 66.66%; }
+        .time-slot.drag-over { background: rgba(102, 126, 234, 0.1); }
+        .planbox-area { background: #fff; margin: 16px; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .planbox-list { flex: 1; overflow-y: auto; padding: 12px; }
+        .planbox-item {
+            background: #fff; border: 1px solid #e9ecef; border-left-width: 5px; margin-bottom: 10px;
+            padding: 12px; cursor: grab; position: relative; transition: all 0.2s; border-radius: 6px;
+        }
+        .planbox-item:hover { border-color: #667eea; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15); }
+        .planbox-item.dragging { opacity: 0.4; }
+        .planbox-title { font-size: 15px; font-weight: 600; color: #212529; margin-bottom: 4px; }
+        .planbox-duration { font-size: 12px; color: #868e96; }
+        .placed-box {
+            position: absolute; left: 2px; right: 2px; background: #fff; padding: 4px 8px;
+            cursor: move; z-index: 5; transition: all 0.2s ease; overflow: hidden;
+            border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid;
+        }
+        .placed-box:hover { z-index: 6; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+        .placed-box.dragging { visibility: hidden; }
+        .placed-box.resizing { cursor: ns-resize !important; opacity: 0.9; transition: none !important; }
+        .resize-handle { position: absolute; left: 0; right: 0; height: 8px; z-index: 15; }
+        .resize-handle.top { top: -4px; cursor: ns-resize; }
+        .resize-handle.bottom { bottom: -4px; cursor: ns-resize; }
+        .drag-ghost {
+            position: absolute !important; pointer-events: none !important; opacity: 0.8;
+            border-radius: 4px; z-index: 1000; padding: 8px; font-weight: 600;
+            backdrop-filter: blur(5px);
+        }
+        #time-badge {
+            position: fixed; background: #c0392b; color: white; padding: 6px 12px;
+            border-radius: 6px; font-size: 13px; font-weight: 600; z-index: 9999;
+            pointer-events: none; display: none;
+        }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; backdrop-filter: blur(4px); }
+        .modal.show { display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease; }
+        .modal-content { background: #fff; border-radius: 12px; padding: 24px; width: 550px; max-width: 90%; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-size: 20px; font-weight: 700; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #868e96; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 14px; color: #495057; margin-bottom: 6px; font-weight: 600; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; background: #f8f9fa; border: 2px solid #e9ecef; color: #212529;
+            padding: 10px 14px; font-size: 15px; border-radius: 8px; transition: all 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: #667eea; background: #fff; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .modal-buttons { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+        .btn { padding: 10px 24px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; border-radius: 8px; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3); }
+        .btn-secondary { background: #f1f3f5; color: #495057; }
+        .btn-danger { background: #fa5252; color: #fff; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="edit-mode">
+    <div id="app-container">
+        <header class="header" id="app-header"></header>
+        <main class="main-layout">
+            <div class="timeline-area" id="timeline-area">
+                <div class="timeline-container" id="timeline-container">
+                    <div class="day-columns" id="day-columns"></div>
+                </div>
+            </div>
+            <div class="planbox-area" id="planbox-area"></div>
+        </main>
+    </div>
+
+    <div id="time-badge"></div>
+    <div id="drag-ghost"></div>
+    <div class="modal" id="edit-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">일정 편집</h2>
+                <button class="modal-close" id="modal-close-btn">&times;</button>
+            </div>
+            <div id="modal-body"></div>
+            <div class="modal-buttons">
+                <button class="btn btn-danger" id="modal-delete-btn">삭제</button>
+                <button class="btn btn-secondary" id="modal-cancel-btn">취소</button>
+                <button class="btn btn-primary" id="modal-save-btn">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // TPLAN V4 - HIGH FIDELITY PROTOTYPE
+        document.addEventListener('DOMContentLoaded', () => {
+            const $ = (selector) => document.querySelector(selector);
+            const $$ = (selector) => document.querySelectorAll(selector);
+
+            const App = {
+                // STATE: Mirrors React's state variables
+                state: {},
+
+                // CORE METHODS
+                init() {
+                    this.loadState();
+                    this.addEventListeners();
+                    this.render();
+                },
+
+                loadState() {
+                    const saved = localStorage.getItem('tplan-v4-state');
+                    if (saved) {
+                        this.state = JSON.parse(saved);
+                    } else {
+                        this.state = {
+                            tripTitle: '도쿄 여행',
+                            startDate: '2025-01-15',
+                            endDate: '2025-01-17',
+                            planboxData: [
+                                { id: 1, title: '도쿄역', category: 'transport', durationHour: 0, durationMinute: 30, cost: '0', memo: '신칸센 하차' },
+                                { id: 2, title: '아사쿠사 센소지', category: 'sightseeing', durationHour: 2, durationMinute: 0, cost: '0', memo: '문화거리 구경' },
+                                { id: 3, title: '이치란 라멘', category: 'food', durationHour: 1, durationMinute: 0, cost: '2000', memo: '돈코츠 라멘' },
+                            ],
+                            placedBoxes: [],
+                            categoryFilter: 'all',
+                            viewMode: 'edit', // edit, compress
+                            dragContext: null,
+                            resizingContext: null,
+                        };
+                    }
+                },
+
+                saveState() {
+                    localStorage.setItem('tplan-v4-state', JSON.stringify(this.state));
+                },
+
+                // RENDER METHODS: Recreate UI based on state
+                render() {
+                    this.renderHeader();
+                    this.renderPlanboxArea();
+                    this.renderTimeline();
+                    this.saveState();
+                },
+
+                renderHeader() {
+                    const header = $('#app-header');
+                    header.innerHTML = `
+                        <div class="header-logo">
+                            <div class="logo-icon">T</div>
+                            <input type="text" id="tripTitleInput" value="${this.state.tripTitle}">
+                        </div>
+                        <div class="header-controls">
+                            <input type="date" id="startDateInput" value="${this.state.startDate}">
+                            <span>~</span>
+                            <input type="date" id="endDateInput" value="${this.state.endDate}">
+                            <button id="apply-dates-btn" class="btn-header">적용</button>
+                        </div>
+                    `;
+                },
+
+                renderPlanboxArea() {
+                    const area = $('#planbox-area');
+                    area.innerHTML = `
+                        <div style="padding: 16px; border-bottom: 1px solid #e9ecef;">
+                            <div style="display:flex; gap:8px; margin-bottom:8px;">
+                                ${Object.entries({food:'🍽️', transport:'🚌', activity:'⚽', sightseeing:'📷', shopping:'🛍️', accommodation:'🏨'})
+                                    .map(([cat, icon]) => `<button class="quick-create-btn" data-category="${cat}">${icon}</button>`).join('')}
+                            </div>
+                            <button id="add-new-plan-btn" class="btn-primary" style="width:100%;">+ 맞춤 플랜박스 생성</button>
+                        </div>
+                        <div class="planbox-list" id="planbox-list"></div>
+                    `;
+                    const list = $('#planbox-list');
+                    this.state.planboxData.forEach(plan => {
+                        const div = document.createElement('div');
+                        div.className = `planbox-item ${plan.category}`;
+                        div.id = `lib-${plan.id}`;
+                        div.draggable = true;
+                        div.innerHTML = `<div class="planbox-title">${plan.title}</div><div class="planbox-duration">${plan.durationHour}h ${plan.durationMinute}m</div>`;
+                        div.style.borderLeftColor = `var(--md-${this.getCategoryColorName(plan.category)})`;
+                        list.appendChild(div);
+                    });
+                },
+
+                renderTimeline() {
+                    const container = $('#day-columns');
+                    container.innerHTML = '';
+                    const days = this.getTotalDays();
+                    for (let i = 0; i < days; i++) {
+                        const dayIndex = i;
+                        const date = new Date(this.state.startDate);
+                        date.setDate(date.getDate() + i);
+                        
+                        const dayCol = document.createElement('div');
+                        dayCol.className = 'day-column';
+                        dayCol.dataset.dayIndex = dayIndex;
+                        dayCol.innerHTML = `<div class="day-header">Day ${dayIndex + 1}</div><div class="time-grid"></div>`;
+                        
+                        const timeGrid = dayCol.querySelector('.time-grid');
+                        for (let h = 7; h < 24; h++) {
+                            timeGrid.innerHTML += `<div class="time-slot" data-hour="${h}"></div>`;
+                        }
+
+                        this.state.placedBoxes.filter(box => box.dayIndex === dayIndex).forEach(box => {
+                            const boxEl = this.createPlacedBoxElement(box);
+                            timeGrid.appendChild(boxEl);
+                        });
+                        container.appendChild(dayCol);
+                    }
+                },
+                
+                createPlacedBoxElement(box) {
+                    const el = document.createElement('div');
+                    const totalMinutes = box.startHour * 60 + box.startMinute;
+                    const durationMinutes = box.durationHour * 60 + box.durationMinute;
+                    el.className = `placed-box ${box.category}`;
+                    el.id = `placed-${box.id}`;
+                    el.draggable = true;
+                    el.style.top = `${(totalMinutes - 7*60)}px`;
+                    el.style.height = `${durationMinutes}px`;
+                    el.style.borderLeftColor = `var(--md-${this.getCategoryColorName(box.category)})`;
+                    el.innerHTML = `
+                        <div class="resize-handle top"></div>
+                        <div class="placed-box-title">${box.title}</div>
+                        <div class="placed-box-time">${this.formatTime(box.startHour, box.startMinute)} - ${this.calculateEndTime(box)}</div>
+                        <div class="resize-handle bottom"></div>
+                    `;
+                    return el;
+                },
+
+                // EVENT HANDLERS
+                addEventListeners() {
+                    const body = document.body;
+                    body.addEventListener('change', e => {
+                        if (e.target.id === 'tripTitleInput') this.state.tripTitle = e.target.value;
+                        if (e.target.id === 'startDateInput') this.state.startDate = e.target.value;
+                        if (e.target.id === 'endDateInput') this.state.endDate = e.target.value;
+                    });
+                    body.addEventListener('click', e => {
+                        if (e.target.id === 'apply-dates-btn') this.render();
+                        if (e.target.id === 'add-new-plan-btn') this.showModal(null);
+                        if (e.target.closest('.quick-create-btn')) this.createQuickBox(e.target.closest('.quick-create-btn').dataset.category);
+                        if (e.target.id === 'modal-close-btn' || e.target.id === 'modal-cancel-btn') this.hideModal();
+                        if (e.target.id === 'modal-save-btn') this.saveModal();
+                        if (e.target.id === 'modal-delete-btn') this.deleteFromModal();
+                    });
+                    body.addEventListener('dragstart', e => this.onDragStart(e));
+                    body.addEventListener('dragend', e => this.onDragEnd(e));
+                    body.addEventListener('dragover', e => this.onDragOver(e));
+                    body.addEventListener('drop', e => this.onDrop(e));
+                    body.addEventListener('mousedown', e => this.onMouseDown(e));
+                    body.addEventListener('mousemove', e => this.onMouseMove(e));
+                    body.addEventListener('mouseup', e => this.onMouseUp(e));
+                    body.addEventListener('dblclick', e => {
+                        const placedBox = e.target.closest('.placed-box');
+                        if(placedBox) this.showModal(parseInt(placedBox.id.replace('placed-', '')));
+                    });
+                },
+
+                onDragStart(e) {
+                    const target = e.target;
+                    if (target.matches('.planbox-item, .placed-box')) {
+                        const id = parseInt(target.id.split('-')[1]);
+                        const source = target.matches('.planbox-item') ? 'library' : 'timeline';
+                        this.state.dragContext = { id, source };
+                        setTimeout(() => target.classList.add('dragging'), 0);
+                        $('#drag-ghost').style.display = 'block';
+                    }
+                },
+
+                onDragEnd(e) {
+                    e.target.classList.remove('dragging');
+                    this.state.dragContext = null;
+                    $('#time-badge').style.display = 'none';
+                    $('#drag-ghost').style.display = 'none';
+                },
+
+                onDragOver(e) {
+                    e.preventDefault();
+                    if (!this.state.dragContext) return;
+                    
+                    const slot = e.target.closest('.time-slot');
+                    if (!slot) return;
+
+                    const dayIndex = parseInt(slot.closest('.day-column').dataset.dayIndex);
+                    const rect = slot.getBoundingClientRect();
+                    const y = e.clientY - rect.top;
+                    const minuteInSlot = Math.floor(y / rect.height * 60);
+                    const currentHour = parseInt(slot.dataset.hour);
+                    const currentMinute = Math.round(minuteInSlot / 10) * 10;
+
+                    this.updateTimeBadge(e, currentHour, currentMinute);
+                    this.updateDragGhost(e, dayIndex, currentHour, currentMinute);
+                },
+
+                onDrop(e) {
+                    e.preventDefault();
+                    if (!this.state.dragContext) return;
+
+                    const dayColumn = e.target.closest('.day-column');
+                    if (!dayColumn) return;
+
+                    const dayIndex = parseInt(dayColumn.dataset.dayIndex);
+                    const rect = e.target.closest('.time-slot').getBoundingClientRect();
+                    const y = e.clientY - rect.top;
+                    const minuteInSlot = Math.floor(y / rect.height * 60);
+                    const startHour = parseInt(e.target.closest('.time-slot').dataset.hour);
+                    const startMinute = Math.round(minuteInSlot / 10) * 10;
+
+                    const { id, source } = this.state.dragContext;
+                    let plan;
+                    if (source === 'library') {
+                        plan = this.state.planboxData.find(p => p.id === id);
+                        const newBox = { ...plan, dayIndex, startHour, startMinute };
+                        this.state.placedBoxes.push(newBox);
+                        this.state.planboxData = this.state.planboxData.filter(p => p.id !== id);
+                    } else {
+                        plan = this.state.placedBoxes.find(p => p.id === id);
+                        plan.dayIndex = dayIndex;
+                        plan.startHour = startHour;
+                        plan.startMinute = startMinute;
+                    }
+                    this.render();
+                },
+                
+                onMouseDown(e) {
+                    const handle = e.target.closest('.resize-handle');
+                    if (handle) {
+                        e.preventDefault();
+                        const boxEl = handle.closest('.placed-box');
+                        const id = parseInt(boxEl.id.replace('placed-', ''));
+                        const box = this.state.placedBoxes.find(b => b.id === id);
+                        this.state.resizingContext = {
+                            id,
+                            handle: handle.classList.contains('top') ? 'top' : 'bottom',
+                            startY: e.clientY,
+                            originalHeight: box.durationHour * 60 + box.durationMinute,
+                            originalTop: box.startHour * 60 + box.startMinute,
+                        };
+                        boxEl.classList.add('resizing');
+                    }
+                },
+
+                onMouseMove(e) {
+                    if (!this.state.resizingContext) return;
+                    const { id, handle, startY, originalHeight, originalTop } = this.state.resizingContext;
+                    const box = this.state.placedBoxes.find(b => b.id === id);
+                    const deltaY = e.clientY - startY;
+                    const deltaMinutes = Math.round(deltaY / 10) * 10;
+
+                    if (handle === 'bottom') {
+                        const newDuration = Math.max(30, originalHeight + deltaMinutes);
+                        box.durationHour = Math.floor(newDuration / 60);
+                        box.durationMinute = newDuration % 60;
+                    } else { // top
+                        const newTop = originalTop + deltaMinutes;
+                        const newDuration = originalHeight - deltaMinutes;
+                        if (newDuration >= 30) {
+                            box.startHour = Math.floor(newTop / 60);
+                            box.startMinute = newTop % 60;
+                            box.durationHour = Math.floor(newDuration / 60);
+                            box.durationMinute = newDuration % 60;
+                        }
+                    }
+                    this.render();
+                },
+
+                onMouseUp(e) {
+                    if (this.state.resizingContext) {
+                        const id = this.state.resizingContext.id;
+                        $(`#placed-${id}`).classList.remove('resizing');
+                        this.state.resizingContext = null;
+                    }
+                },
+
+                // MODAL & ACTIONS
+                showModal(id) {
+                    const isNew = id === null;
+                    const plan = isNew ? {} : this.state.placedBoxes.find(p => p.id === id) || this.state.planboxData.find(p => p.id === id);
+                    
+                    $('#modal-title').textContent = isNew ? '새 일정 추가' : '일정 편집';
+                    $('#modal-body').innerHTML = `
+                        <input type="hidden" id="modal-plan-id" value="${isNew ? '' : id}">
+                        <div class="form-group">
+                            <label>제목</label><input type="text" id="modal-title-input" value="${plan.title || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>카테고리</label>
+                            <select id="modal-category-select">
+                                ${Object.keys(this.getCategoryColorName(null, true)).map(cat => `<option value="${cat}" ${plan.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>소요시간 (시간/분)</label>
+                            <input type="number" id="modal-duration-hour" value="${plan.durationHour || 1}" style="width:48%;">
+                            <input type="number" id="modal-duration-minute" value="${plan.durationMinute || 0}" style="width:48%;">
+                        </div>
+                    `;
+                    $('#edit-modal').classList.add('show');
+                },
+
+                hideModal() {
+                    $('#edit-modal').classList.remove('show');
+                },
+
+                saveModal() {
+                    const id = parseInt($('#modal-plan-id').value);
+                    const isNew = !id;
+                    let plan = isNew ? { id: Date.now() } : this.state.placedBoxes.find(p => p.id === id) || this.state.planboxData.find(p => p.id === id);
+                    
+                    plan.title = $('#modal-title-input').value;
+                    plan.category = $('#modal-category-select').value;
+                    plan.durationHour = parseInt($('#modal-duration-hour').value);
+                    plan.durationMinute = parseInt($('#modal-duration-minute').value);
+
+                    if (isNew) {
+                        this.state.planboxData.push(plan);
+                    }
+                    this.hideModal();
+                    this.render();
+                },
+                
+                deleteFromModal() {
+                    const id = parseInt($('#modal-plan-id').value);
+                    this.state.planboxData = this.state.planboxData.filter(p => p.id !== id);
+                    this.state.placedBoxes = this.state.placedBoxes.filter(p => p.id !== id);
+                    this.hideModal();
+                    this.render();
+                },
+                
+                createQuickBox(category) {
+                    const newPlan = {
+                        id: Date.now(),
+                        title: `${category} 활동`,
+                        category: category,
+                        durationHour: 1,
+                        durationMinute: 0,
+                        cost: '0',
+                        memo: ''
+                    };
+                    this.state.planboxData.push(newPlan);
+                    this.render();
+                },
+
+                // UTILITY METHODS
+                getTotalDays() {
+                    return (new Date(this.state.endDate) - new Date(this.state.startDate)) / (1000 * 60 * 60 * 24) + 1;
+                },
+                
+                getCategoryColorName(category, all = false) {
+                    const colors = { food: 'orange', transport: 'green', activity: 'blue', sightseeing: 'purple', shopping: 'pink', accommodation: 'deep-purple' };
+                    if (all) return colors;
+                    return colors[category] || 'grey';
+                },
+
+                formatTime(hour, minute) {
+                    if (hour == null) return '미설정';
+                    return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                },
+
+                calculateEndTime(box) {
+                    const startMinutes = box.startHour * 60 + box.startMinute;
+                    const durationMinutes = box.durationHour * 60 + box.durationMinute;
+                    const endTotalMinutes = startMinutes + durationMinutes;
+                    const endHour = Math.floor(endTotalMinutes / 60);
+                    const endMinute = endTotalMinutes % 60;
+                    return this.formatTime(endHour, endMinute);
+                },
+
+                updateTimeBadge(e, hour, minute) {
+                    if (!this.state.dragContext) return;
+                    const { id, source } = this.state.dragContext;
+                    const plan = source === 'library' ? this.state.planboxData.find(p => p.id === id) : this.state.placedBoxes.find(p => p.id === id);
+                    const duration = plan.durationHour * 60 + plan.durationMinute;
+                    const start = this.formatTime(hour, minute);
+                    const end = this.formatTime(Math.floor((hour * 60 + minute + duration) / 60), (hour * 60 + minute + duration) % 60);
+                    
+                    const badge = $('#time-badge');
+                    badge.textContent = `${start} ~ ${end}`;
+                    badge.style.display = 'block';
+                    badge.style.left = `${e.clientX + 20}px`;
+                    badge.style.top = `${e.clientY - 15}px`;
+                },
+
+                updateDragGhost(e, dayIndex, hour, minute) {
+                    if (!this.state.dragContext) return;
+                    const { id, source } = this.state.dragContext;
+                    const plan = source === 'library' ? this.state.planboxData.find(p => p.id === id) : this.state.placedBoxes.find(p => p.id === id);
+                    const ghost = $('#drag-ghost');
+                    const duration = plan.durationHour * 60 + plan.durationMinute;
+                    
+                    ghost.className = `drag-ghost ${plan.category}`;
+                    ghost.style.borderColor = `var(--md-${this.getCategoryColorName(plan.category)})`;
+                    ghost.style.background = `rgba(${this.hexToRgb(this.getCategoryColorValue(plan.category))}, 0.1)`;
+                    ghost.textContent = plan.title;
+                    
+                    const dayCol = $(`[data-day-index="${dayIndex}"]`);
+                    if (dayCol) {
+                        const rect = dayCol.getBoundingClientRect();
+                        ghost.style.left = `${rect.left}px`;
+                        ghost.style.top = `${rect.top + (hour * 60 + minute - 7*60)}px`;
+                        ghost.style.width = `${rect.width}px`;
+                        ghost.style.height = `${duration}px`;
+                    }
+                },
+                
+                hexToRgb(hex) {
+                    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : null;
+                },
+
+                getCategoryColorValue(category) {
+                    const colorName = this.getCategoryColorName(category);
+                    return getComputedStyle(document.documentElement).getPropertyValue(`--md-${colorName}`).trim();
+                }
+            };
+
+            App.init();
+        });
+    </script>
+</body>
+</html>

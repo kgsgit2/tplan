@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPlan Prototype v6 - Final</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined" rel="stylesheet">
+    <style>
+        :root {
+            --color-primary: #4A69E2;
+            --color-primary-dark: #3b54b4;
+            --color-bg: #F8F9FA;
+            --color-surface: #FFFFFF;
+            --color-border: #E9ECEF;
+            --color-text: #212529;
+            --color-text-muted: #6C757D;
+            --color-accent-red: #E74C3C;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+            --border-radius: 12px;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --spacing-md: 16px;
+            --cat-transport: #81ecec; --cat-food: #fab1a0; --cat-accommodation: #a29bfe; 
+            --cat-sightseeing: #74b9ff; --cat-activity: #55efc4; --cat-shopping: #fd79a8; --cat-custom: #dfe6e9;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-family); background-color: var(--color-bg); color: var(--color-text); font-size: 16px; overflow: hidden; -webkit-font-smoothing: antialiased; }
+        #app-container { display: flex; flex-direction: column; height: 100vh; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 12px var(--spacing-md); background-color: var(--color-surface); box-shadow: var(--shadow-sm); z-index: 100; }
+        .main-content { display: flex; gap: var(--spacing-md); flex-grow: 1; overflow: hidden; padding: var(--spacing-md); }
+        .sidebar { width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: var(--spacing-md); }
+        .plan-library, .cost-summary { background-color: var(--color-surface); border-radius: var(--border-radius); box-shadow: var(--shadow-sm); padding: var(--spacing-md); }
+        .plan-library { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .plan-list { flex-grow: 1; overflow-y: auto; margin-top: var(--spacing-md); }
+        .timeline-area { flex-grow: 1; display: flex; flex-direction: column; background-color: var(--color-surface); border-radius: var(--border-radius); box-shadow: var(--shadow-sm); overflow: hidden; }
+        .timeline-wrapper { flex-grow: 1; overflow: auto; }
+        .plan-box { padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 5px solid; background-color: var(--color-bg); cursor: grab; transition: all 0.2s ease-in-out; }
+        .plan-box:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .placed-box { position: absolute; width: calc(100% - 4px); left: 2px; padding: 8px 12px; border-radius: 6px; z-index: 10; cursor: move; border-left: 5px solid; background-color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 0.2s ease; }
+        .placed-box:hover { z-index: 11; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: scale(1.02); }
+        .resize-handle { position: absolute; left: 0; right: 0; height: 10px; z-index: 12; }
+        .resize-handle.top { top: -5px; cursor: ns-resize; }
+        .resize-handle.bottom { bottom: -5px; cursor: ns-resize; }
+        #time-badge { position: fixed; background: var(--color-accent-red); color: white; padding: 8px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; z-index: 9999; pointer-events: none; display: none; box-shadow: var(--shadow-md); }
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; visibility: hidden; opacity: 0; transition: opacity 0.2s; backdrop-filter: blur(4px); }
+        .modal-backdrop.visible { visibility: visible; opacity: 1; }
+        .modal { background-color: var(--color-surface); padding: 28px; border-radius: var(--border-radius); width: 90%; max-width: 550px; box-shadow: var(--shadow-md); transform: scale(0.95); transition: transform 0.2s ease; }
+        .modal-backdrop.visible .modal { transform: scale(1); }
+        .btn { padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.2s; }
+        .btn-primary { background-color: var(--color-primary); color: white; }
+        .btn-primary:hover { background-color: var(--color-primary-dark); transform: translateY(-1px); }
+        .btn-secondary { background-color: var(--color-border); color: var(--color-text-muted); }
+        .btn-secondary:hover { background-color: #d8dde2; }
+        .btn-danger { background-color: var(--color-accent-red); color: white; }
+        .btn-danger:hover { background-color: #c0392b; }
+        .desktop-timeline { display: block; } .mobile-timeline { display: none; }
+        .mobile-day-tabs { display: none; }
+        @media (max-width: 900px) {
+            .main-content { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; max-height: 40vh; flex-direction: column; }
+            .plan-library { flex-grow: 1; }
+            .desktop-timeline { display: none; }
+            .mobile-timeline { display: block; }
+            .mobile-day-tabs { display: flex; flex-shrink: 0; overflow-x: auto; padding: 0 var(--spacing-md); border-bottom: 1px solid var(--color-border); }
+            .day-tab { padding: 14px 16px; border-bottom: 3px solid transparent; cursor: pointer; font-weight: 500; color: var(--color-text-muted); white-space: nowrap; }
+            .day-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 700; }
+            .day-column { border-right: none; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <header class="header" id="app-header"></header>
+        <main class="main-content">
+            <aside class="sidebar" id="sidebar"></aside>
+            <section class="timeline-area">
+                <div class="mobile-day-tabs" id="mobile-day-tabs"></div>
+                <div class="timeline-wrapper desktop-timeline" id="desktop-timeline-wrapper"></div>
+                <div class="timeline-wrapper mobile-timeline" id="mobile-timeline-wrapper"></div>
+            </section>
+        </main>
+    </div>
+    <div id="time-badge"></div>
+    <div class="modal-backdrop" id="edit-modal"></div>
+
+    <script>
+        // TPlan Prototype v6 - Gold Standard Implementation
+        document.addEventListener('DOMContentLoaded', () => {
+            const App = {
+                state: {},
+                dragContext: null,
+                resizeContext: null,
+                PIXELS_PER_MINUTE: 1,
+
+                init() {
+                    this.loadState();
+                    this.addEventListeners();
+                    this.render();
+                },
+
+                loadState() {
+                    const saved = localStorage.getItem('tplan-v6-state');
+                    if (saved) {
+                        this.state = JSON.parse(saved);
+                    } else {
+                        this.state = {
+                            tripTitle: '나의 멋진 도쿄 여행',
+                            startDate: '2025-01-15',
+                            endDate: '2025-01-18',
+                            planLibrary: [
+                                { id: 1, title: '공항 리무진', durationMinutes: 70, category: 'transport', cost: 3200, memo: '나리타 공항 -> 신주쿠' },
+                                { id: 2, title: '츠타 라멘', durationMinutes: 90, category: 'food', cost: 1800, memo: '미슐랭 1스타 라멘집' },
+                                { id: 3, title: '팀랩 보더리스', durationMinutes: 240, category: 'sightseeing', cost: 3800, memo: '예매 필수' },
+                            ],
+                            placedPlans: [
+                                { id: 4, title: '호텔 체크인', durationMinutes: 45, category: 'accommodation', dayIndex: 0, startMinutes: 14 * 60, cost: 25000, memo: '신주쿠 그레이서리 호텔' },
+                                { id: 5, title: '저녁: 야키토리', durationMinutes: 120, category: 'food', dayIndex: 0, startMinutes: 19 * 60, cost: 6000, memo: '오모이데요코초' },
+                            ],
+                            mobileActiveDay: 0,
+                        };
+                    }
+                },
+
+                saveState() { localStorage.setItem('tplan-v6-state', JSON.stringify(this.state)); },
+
+                render() {
+                    this.renderHeader();
+                    this.renderSidebar();
+                    this.renderTimeline();
+                    this.saveState();
+                },
+
+                renderHeader() {
+                    document.getElementById('app-header').innerHTML = `
+                        <div style="display:flex; align-items:center; gap:12px;">
+                           <div style="width:32px; height:32px; background:var(--color-primary); border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">T</div>
+                           <input type="text" id="tripTitleInput" value="${this.state.tripTitle}" style="font-size:20px; font-weight:700; border:none; background:transparent;">
+                        </div>
+                        <div>
+                            <input type="date" id="startDateInput" value="${this.state.startDate}" style="padding:8px; border-radius:6px; border:1px solid var(--color-border);">
+                            <span style="margin:0 8px; color:var(--color-text-muted);">~</span>
+                            <input type="date" id="endDateInput" value="${this.state.endDate}" style="padding:8px; border-radius:6px; border:1px solid var(--color-border);">
+                        </div>
+                    `;
+                },
+
+                renderSidebar() {
+                    const sidebar = document.getElementById('sidebar');
+                    sidebar.innerHTML = `
+                        <div class="plan-library">
+                            <h2 style="font-weight:700; margin-bottom:16px;">일정 라이브러리</h2>
+                            <div class="plan-list" id="plan-list"></div>
+                            <button id="add-new-plan-btn" class="btn btn-primary" style="width:100%; margin-top:16px;">+ 새 일정 만들기</button>
+                        </div>
+                        <div class="cost-summary" id="cost-summary"></div>
+                    `;
+                    const planList = document.getElementById('plan-list');
+                    planList.innerHTML = '';
+                    this.state.planLibrary.forEach(plan => planList.appendChild(this.createPlanBox(plan)));
+
+                    const totalCost = this.state.placedPlans.reduce((sum, p) => sum + (Number(p.cost) || 0), 0);
+                    document.getElementById('cost-summary').innerHTML = `<h3 style="font-weight:600; margin-bottom:8px;">예상 총 비용</h3><p style="font-size:24px; font-weight:700; color:var(--color-primary);">₩ ${totalCost.toLocaleString()}</p>`;
+                },
+
+                renderTimeline() {
+                    const totalDays = this.getTotalDays();
+                    // Desktop
+                    const desktopWrapper = document.getElementById('desktop-timeline-wrapper');
+                    desktopWrapper.innerHTML = '';
+                    const desktopGrid = document.createElement('div');
+                    desktopGrid.style.cssText = `display:grid; grid-template-columns:60px repeat(${totalDays}, 1fr); min-height:100%;`;
+                    desktopWrapper.appendChild(desktopGrid);
+                    desktopGrid.innerHTML = this.createTimeLabels();
+                    for (let i = 0; i < totalDays; i++) { desktopGrid.appendChild(this.createDayColumn(i)); }
+
+                    // Mobile
+                    const mobileTabs = document.getElementById('mobile-day-tabs');
+                    mobileTabs.innerHTML = '';
+                    for (let i = 0; i < totalDays; i++) {
+                        const tab = document.createElement('div');
+                        tab.className = `day-tab ${i === this.state.mobileActiveDay ? 'active' : ''}`;
+                        tab.textContent = `Day ${i + 1}`;
+                        tab.dataset.dayIndex = i;
+                        mobileTabs.appendChild(tab);
+                    }
+                    const mobileWrapper = document.getElementById('mobile-timeline-wrapper');
+                    mobileWrapper.innerHTML = '';
+                    mobileWrapper.appendChild(this.createDayColumn(this.state.mobileActiveDay));
+                },
+
+                createPlanBox(plan) {
+                    const div = document.createElement('div');
+                    div.className = 'plan-box';
+                    div.id = `lib-${plan.id}`;
+                    div.draggable = true;
+                    div.innerHTML = `<h3 style="font-size:15px; font-weight:600;">${plan.title}</h3><p style="font-size:13px; color:var(--color-text-muted);">${plan.durationMinutes} 분</p>`;
+                    div.style.borderColor = `var(--cat-${plan.category})`;
+                    div.addEventListener('dragstart', e => this.onDragStart(e, plan.id, 'library'));
+                    return div;
+                },
+
+                createDayColumn(dayIndex) {
+                    const dayCol = document.createElement('div');
+                    dayCol.className = 'day-column';
+                    dayCol.dataset.dayIndex = dayIndex;
+                    dayCol.style.position = 'relative';
+                    for (let h = 7; h < 23; h++) {
+                        const slot = document.createElement('div');
+                        slot.style.cssText = 'height:60px; border-bottom:1px solid var(--color-border);';
+                        dayCol.appendChild(slot);
+                    }
+                    this.state.placedPlans.filter(p => p.dayIndex === dayIndex).forEach(plan => {
+                        dayCol.appendChild(this.createPlacedBox(plan));
+                    });
+                    return dayCol;
+                },
+
+                createPlacedBox(plan) {
+                    const div = document.createElement('div');
+                    div.className = 'placed-box';
+                    div.id = `placed-${plan.id}`;
+                    div.draggable = true;
+                    div.style.top = `${(plan.startMinutes - 7 * 60) * this.PIXELS_PER_MINUTE}px`;
+                    div.style.height = `${plan.durationMinutes * this.PIXELS_PER_MINUTE}px`;
+                    div.style.borderColor = `var(--cat-${plan.category})`;
+                    div.innerHTML = `
+                        <div class="resize-handle top"></div>
+                        <strong style="font-size:14px; color:var(--color-text);">${plan.title}</strong>
+                        <p style="font-size:12px; color:var(--color-text-muted); margin-top:4px;">${this.formatTime(plan.startMinutes)} - ${this.formatTime(plan.startMinutes + plan.durationMinutes)}</p>
+                        <div class="resize-handle bottom"></div>
+                    `;
+                    div.addEventListener('dragstart', e => this.onDragStart(e, plan.id, 'timeline'));
+                    div.addEventListener('dblclick', () => this.showModal(plan.id));
+                    return div;
+                },
+
+                createTimeLabels() {
+                    let labelsHTML = '<div class="time-label-col">';
+                    for(let h=7; h<23; h++) { labelsHTML += `<div style="height:60px; text-align:right; padding-right:8px; font-size:12px; color:var(--color-text-muted);">${h}:00</div>`; }
+                    return labelsHTML + '</div>';
+                },
+
+                addEventListeners() {
+                    const body = document.body;
+                    body.addEventListener('change', e => {
+                        if (e.target.matches('#startDateInput, #endDateInput, #tripTitleInput')) {
+                            this.state.startDate = document.getElementById('startDateInput').value;
+                            this.state.endDate = document.getElementById('endDateInput').value;
+                            this.state.tripTitle = document.getElementById('tripTitleInput').value;
+                            this.state.mobileActiveDay = 0;
+                            this.render();
+                        }
+                    });
+                    body.addEventListener('click', e => {
+                        if (e.target.matches('.day-tab')) {
+                            this.state.mobileActiveDay = parseInt(e.target.dataset.dayIndex);
+                            this.renderTimeline();
+                        }
+                        if (e.target.matches('#add-new-plan-btn')) this.showModal(null);
+                    });
+                    body.addEventListener('dragover', e => this.onDragOver(e));
+                    body.addEventListener('drop', e => this.onDrop(e));
+                    body.addEventListener('dragend', () => this.dragContext = null);
+                    body.addEventListener('mousedown', e => this.onMouseDown(e));
+                    body.addEventListener('mousemove', e => this.onMouseMove(e));
+                    body.addEventListener('mouseup', () => this.onMouseUp());
+                },
+
+                onDragStart(e, id, source) {
+                    e.stopPropagation();
+                    this.dragContext = { id, source };
+                    e.dataTransfer.effectAllowed = 'move';
+                },
+
+                onDragOver(e) {
+                    e.preventDefault();
+                    if (!this.dragContext) return;
+                    const dayColumn = e.target.closest('.day-column');
+                    if (!dayColumn) return;
+                    const rect = dayColumn.getBoundingClientRect();
+                    const y = e.clientY - rect.top;
+                    const startMinutes = Math.round(y / this.PIXELS_PER_MINUTE / 10) * 10 + 7 * 60;
+                    
+                    const badge = document.getElementById('time-badge');
+                    badge.style.display = 'block';
+                    badge.style.left = `${e.clientX + 20}px`;
+                    badge.style.top = `${e.clientY - 15}px`;
+                    const plan = this.dragContext.source === 'library' ? this.state.planLibrary.find(p=>p.id===this.dragContext.id) : this.state.placedPlans.find(p=>p.id===this.dragContext.id);
+                    badge.textContent = `${this.formatTime(startMinutes)} - ${this.formatTime(startMinutes + plan.durationMinutes)}`;
+                },
+
+                onDrop(e) {
+                    e.preventDefault();
+                    document.getElementById('time-badge').style.display = 'none';
+                    const dayColumn = e.target.closest('.day-column');
+                    if (!dayColumn || !this.dragContext) return;
+
+                    const dayIndex = parseInt(dayColumn.dataset.dayIndex);
+                    const rect = dayColumn.getBoundingClientRect();
+                    const y = e.clientY - rect.top;
+                    const startMinutes = Math.round(y / this.PIXELS_PER_MINUTE / 10) * 10 + 7 * 60;
+
+                    const { id, source } = this.dragContext;
+                    if (source === 'library') {
+                        const plan = this.state.planLibrary.find(p => p.id === id);
+                        this.state.placedPlans.push({ ...plan, id: Date.now(), dayIndex, startMinutes });
+                    } else {
+                        const plan = this.state.placedPlans.find(p => p.id === id);
+                        plan.dayIndex = dayIndex;
+                        plan.startMinutes = startMinutes;
+                    }
+                    this.dragContext = null;
+                    this.render();
+                },
+
+                onMouseDown(e) {
+                    const handle = e.target.closest('.resize-handle');
+                    if (!handle) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const boxEl = handle.closest('.placed-box');
+                    const id = parseInt(boxEl.id.replace('placed-', ''));
+                    const plan = this.state.placedPlans.find(b => b.id === id);
+                    this.resizeContext = { id, handle: handle.classList.contains('top') ? 'top' : 'bottom', startY: e.clientY, originalHeight: plan.durationMinutes, originalStart: plan.startMinutes };
+                },
+
+                onMouseMove(e) {
+                    if (!this.resizeContext) return;
+                    const { id, handle, startY, originalHeight, originalStart } = this.resizeContext;
+                    const plan = this.state.placedPlans.find(b => b.id === id);
+                    const deltaY = e.clientY - startY;
+                    const deltaMinutes = Math.round(deltaY / this.PIXELS_PER_MINUTE / 10) * 10;
+
+                    if (handle === 'bottom') {
+                        plan.durationMinutes = Math.max(30, originalHeight + deltaMinutes);
+                    } else { // top
+                        const newStart = originalStart + deltaMinutes;
+                        const newDuration = originalHeight - deltaMinutes;
+                        if (newDuration >= 30) { plan.startMinutes = newStart; plan.durationMinutes = newDuration; }
+                    }
+                    this.render();
+                },
+
+                onMouseUp() { this.resizeContext = null; },
+
+                showModal(id) {
+                    const isNew = id === null;
+                    const plan = isNew ? {} : this.state.placedPlans.find(p => p.id === id) || this.state.planLibrary.find(p => p.id === id);
+                    const modal = document.getElementById('edit-modal');
+                    modal.innerHTML = `
+                        <div class="modal">
+                            <h2 style="font-weight:700; margin-bottom:24px;">${isNew ? '새 일정 만들기' : '일정 편집'}</h2>
+                            <input type="hidden" id="modal-plan-id" value="${isNew ? '' : id}">
+                            <div style="margin-bottom:16px;"><label>제목</label><input type="text" id="modal-title-input" value="${plan.title || ''}" style="width:100%; padding:10px; border-radius:6px; border:1px solid var(--color-border);"></div>
+                            <div style="margin-bottom:16px;"><label>소요시간(분)</label><input type="number" id="modal-duration-input" value="${plan.durationMinutes || 60}" step="10" style="width:100%; padding:10px; border-radius:6px; border:1px solid var(--color-border);"></div>
+                            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:28px;">
+                                ${!isNew ? '<button id="modal-delete-btn" class="btn btn-danger">삭제</button>' : ''}
+                                <button id="modal-cancel-btn" class="btn btn-secondary">취소</button>
+                                <button id="modal-save-btn" class="btn btn-primary">저장</button>
+                            </div>
+                        </div>
+                    `;
+                    modal.classList.add('visible');
+                    modal.querySelector('#modal-cancel-btn').onclick = () => this.hideModal();
+                    modal.querySelector('#modal-save-btn').onclick = () => this.saveModal(isNew);
+                    if (!isNew) modal.querySelector('#modal-delete-btn').onclick = () => this.deleteModal();
+                },
+
+                hideModal() { document.getElementById('edit-modal').classList.remove('visible'); },
+
+                saveModal(isNew) {
+                    const id = isNew ? Date.now() : parseInt(document.getElementById('modal-plan-id').value);
+                    const title = document.getElementById('modal-title-input').value;
+                    const durationMinutes = parseInt(document.getElementById('modal-duration-input').value);
+                    if (!title || !durationMinutes) return alert('제목과 소요시간을 입력하세요.');
+
+                    if (isNew) {
+                        this.state.planLibrary.push({ id, title, durationMinutes, category: 'custom', cost: 0, memo: '' });
+                    } else {
+                        let plan = this.state.placedPlans.find(p => p.id === id) || this.state.planLibrary.find(p => p.id === id);
+                        plan.title = title;
+                        plan.durationMinutes = durationMinutes;
+                    }
+                    this.hideModal();
+                    this.render();
+                },
+
+                deleteModal() {
+                    const id = parseInt(document.getElementById('modal-plan-id').value);
+                    this.state.placedPlans = this.state.placedPlans.filter(p => p.id !== id);
+                    this.state.planLibrary = this.state.planLibrary.filter(p => p.id !== id);
+                    this.hideModal();
+                    this.render();
+                },
+
+                formatTime(totalMinutes) {
+                    const h = Math.floor(totalMinutes / 60); const m = totalMinutes % 60;
+                    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                },
+
+                getTotalDays() { return Math.max(1, (new Date(this.state.endDate) - new Date(this.state.startDate)) / (1000 * 60 * 60 * 24) + 1); }
+            };
+
+            App.init();
+        });
+    </script>
+</body>
+</html>

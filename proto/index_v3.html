@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPlan Redesign Prototype v3 - Full Feature</title>
+    <style>
+        :root {
+            --color-transport: #3B82F6; --color-food: #F59E0B; --color-tourism: #10B981;
+            --color-accommodation: #6366F1; --color-shopping: #E91E63; --color-activity: #2196F3;
+            --color-custom: #1976D2; --space-md: 16px; --text-base: 16px;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --background-color: #f8f9fa; --surface-color: #ffffff; --border-color: #dee2e6;
+            --text-color: #212529; --text-muted-color: #6c757d; --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        body { font-family: var(--font-family); background-color: var(--background-color); color: var(--text-color); margin: 0; }
+        #app-container { display: flex; flex-direction: column; height: 100vh; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 8px var(--space-md); background-color: var(--surface-color); box-shadow: var(--shadow); z-index: 100; }
+        .main-content { display: flex; gap: var(--space-md); flex-grow: 1; overflow: hidden; padding: var(--space-md); }
+        .sidebar { width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: var(--space-md); }
+        .plan-library, .cost-summary { background-color: var(--surface-color); border-radius: 8px; box-shadow: var(--shadow); padding: var(--space-md); }
+        .plan-library { flex-grow: 1; overflow-y: auto; }
+        .timeline-wrapper { flex-grow: 1; background-color: var(--surface-color); border-radius: 8px; box-shadow: var(--shadow); padding: var(--space-md); overflow: auto; }
+        .plan-box { padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; border-left: 5px solid; background-color: #f8f9fa; cursor: grab; position: relative; }
+        .placed-box { position: absolute; width: calc(100% - 4px); left: 2px; background: white; padding: 4px 8px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10; cursor: move; border-left: 5px solid; }
+        .resize-handle { position: absolute; left: 0; right: 0; height: 8px; z-index: 11; }
+        .resize-handle.top { top: -4px; cursor: ns-resize; }
+        .resize-handle.bottom { bottom: -4px; cursor: ns-resize; }
+        #time-badge, #drag-ghost { position: fixed; z-index: 9999; pointer-events: none; display: none; }
+        #time-badge { background: #c0392b; color: white; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+        #drag-ghost { background: rgba(255,255,255,0.8); border: 2px dashed var(--text-muted-color); padding: 8px; border-radius: 4px; backdrop-filter: blur(5px); }
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; visibility: hidden; opacity: 0; transition: opacity 0.2s; }
+        .modal-backdrop.visible { visibility: visible; opacity: 1; }
+        .modal { background-color: var(--surface-color); padding: 24px; border-radius: 8px; width: 90%; max-width: 550px; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 15px; }
+        .btn-primary { background-color: var(--color-custom); color: white; }
+        .btn-danger { background-color: #e74c3c; color: white; }
+        .btn-secondary { background-color: #ecf0f1; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; margin-bottom: 4px; font-size: 14px; font-weight: 500; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 15px; box-sizing: border-box; }
+        #place-search-results { max-height: 150px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px; }
+        #place-search-results div { padding: 8px; cursor: pointer; }
+        #place-search-results div:hover { background-color: #f1f3f5; }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <header class="header" id="app-header"></header>
+        <div class="main-content">
+            <aside class="sidebar">
+                <div class="plan-library" id="plan-library"></div>
+                <div class="cost-summary" id="cost-summary"></div>
+            </aside>
+            <div class="timeline-wrapper" id="timeline-wrapper">
+                <div id="timeline"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="time-badge"></div>
+    <div id="drag-ghost"></div>
+
+    <div class="modal-backdrop" id="editModal">
+        <div class="modal">
+            <div style="display:flex; justify-content: space-between; align-items: center;">
+                <h2 id="modalTitle">일정 편집</h2> <button id="deleteBtn" class="btn btn-danger">삭제</button>
+            </div>
+            <input type="hidden" id="planIdInput">
+            <div class="form-group">
+                <label for="planTitleInput">제목</label><input type="text" id="planTitleInput">
+            </div>
+            <div class="form-group">
+                <label for="planCategoryInput">카테고리</label>
+                <select id="planCategoryInput"></select>
+            </div>
+            <div style="display:flex; gap: 16px;">
+                <div class="form-group" style="flex:1;"><label for="planStartInput">시작 시간</label><input type="time" id="planStartInput" step="600"></div>
+                <div class="form-group" style="flex:1;"><label for="planDurationInput">소요 시간 (분)</label><input type="number" id="planDurationInput" step="10"></div>
+            </div>
+            <div class="form-group">
+                <label for="planCostInput">비용</label><input type="text" id="planCostInput">
+            </div>
+             <div class="form-group">
+                <label for="planLocationInput">장소 검색</label><input type="text" id="planLocationInput" placeholder="'도쿄타워' 입력해보세요">
+                <div id="place-search-results"></div>
+            </div>
+            <div class="form-group">
+                <label for="planMemoInput">메모</label><textarea id="planMemoInput" rows="3"></textarea>
+            </div>
+            <div style="display:flex; justify-content: flex-end; gap: 8px; margin-top: 24px;">
+                <button id="cancelBtn" class="btn btn-secondary">취소</button>
+                <button id="saveBtn" class="btn btn-primary">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // V3 - FULL FEATURE PROTOTYPE
+        document.addEventListener('DOMContentLoaded', () => {
+            const $ = (selector) => document.querySelector(selector);
+            const $$ = (selector) => document.querySelectorAll(selector);
+
+            const PIXELS_PER_MINUTE = 1; // 60px per hour
+            const CATEGORIES = { transport: '이동', food: '식사', tourism: '관광', accommodation: '숙박', shopping: '쇼핑', activity: '활동', custom: '맞춤' };
+
+            let state = {};
+            let dragContext = {};
+
+            function formatTime(totalMinutes) {
+                if (totalMinutes === null || isNaN(totalMinutes)) return '미설정';
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+            }
+
+            function timeToMinutes(timeStr) { // "HH:MM"
+                if (!timeStr) return null;
+                const [hours, minutes] = timeStr.split(':').map(Number);
+                return hours * 60 + minutes;
+            }
+
+            function initDefaultState() {
+                state = {
+                    tripTitle: '도쿄 여행', startDate: '2025-01-15', endDate: '2025-01-17',
+                    planLibrary: [
+                        { id: `lib-1`, title: '공항철도', durationMinutes: 60, category: 'transport', cost: '3000', memo: '' },
+                        { id: `lib-2`, title: '스시 오마카세', durationMinutes: 90, category: 'food', cost: '15000', memo: '예약 필수' },
+                        { id: `lib-3`, title: '도쿄 국립박물관', durationMinutes: 180, category: 'tourism', cost: '1000', memo: '특별 전시 확인' },
+                    ],
+                    placedPlans: [],
+                    categoryFilter: 'all',
+                    cloneMode: false, cloneSourceId: null,
+                };
+            }
+
+            function loadState() {
+                const savedState = localStorage.getItem('tplan-v3-state');
+                if (savedState) {
+                    state = JSON.parse(savedState);
+                } else {
+                    initDefaultState();
+                }
+            }
+
+            function saveState() {
+                localStorage.setItem('tplan-v3-state', JSON.stringify(state));
+            }
+
+            function render() {
+                renderHeader();
+                renderSidebar();
+                renderTimeline();
+                saveState();
+            }
+
+            function renderHeader() {
+                const totalDays = (new Date(state.endDate) - new Date(state.startDate)) / (1000 * 60 * 60 * 24) + 1;
+                $('#app-header').innerHTML = `
+                    <input type="text" id="tripTitle" value="${state.tripTitle}">
+                    <div>
+                        <input type="date" id="startDate" value="${state.startDate}">
+                        <span>~</span>
+                        <input type="date" id="endDate" value="${state.endDate}">
+                        <button id="apply-dates" class="btn btn-primary">적용</button>
+                    </div>
+                `;
+                $('#tripTitle').addEventListener('change', e => state.tripTitle = e.target.value);
+                $('#apply-dates').addEventListener('click', () => {
+                    state.startDate = $('#startDate').value;
+                    state.endDate = $('#endDate').value;
+                    render();
+                });
+            }
+
+            function renderSidebar() {
+                const libraryEl = $('#plan-library');
+                libraryEl.innerHTML = '<h3>플랜 라이브러리</h3>';
+                // Filter controls
+                const filterEl = document.createElement('div');
+                filterEl.innerHTML = `
+                    <select id="category-filter">
+                        <option value="all">전체</option>
+                        ${Object.entries(CATEGORIES).map(([key, value]) => `<option value="${key}" ${state.categoryFilter === key ? 'selected' : ''}>${value}</option>`).join('')}
+                    </select>
+                    <button id="add-custom-plan" class="btn btn-primary">+ 새 일정</button>
+                `;
+                libraryEl.appendChild(filterEl);
+                $('#category-filter').addEventListener('change', e => { state.categoryFilter = e.target.value; render(); });
+                $('#add-custom-plan').addEventListener('click', () => openModal(null));
+
+                // Plan list
+                state.planLibrary
+                    .filter(p => state.categoryFilter === 'all' || p.category === state.categoryFilter)
+                    .forEach(plan => {
+                        const div = document.createElement('div');
+                        div.className = 'plan-box';
+                        div.id = plan.id;
+                        div.draggable = true;
+                        div.style.borderColor = `var(--color-${plan.category})`;
+                        div.innerHTML = `<h3>${plan.title}</h3><p>${plan.durationMinutes}분</p>`;
+                        div.addEventListener('dragstart', e => handleDragStart(e, plan.id, 'library'));
+                        libraryEl.appendChild(div);
+                    });
+                
+                // Cost summary
+                const costEl = $('#cost-summary');
+                const totalCost = state.placedPlans.reduce((sum, p) => sum + (Number(p.cost) || 0), 0);
+                costEl.innerHTML = `<h3>예상 총 비용</h3><p>${totalCost.toLocaleString()} 원</p>`;
+            }
+
+            function renderTimeline() {
+                const timelineEl = $('#timeline');
+                const totalDays = Math.max(1, (new Date(state.endDate) - new Date(state.startDate)) / (1000 * 60 * 60 * 24) + 1);
+                timelineEl.innerHTML = '';
+                timelineEl.style.gridTemplateColumns = `50px repeat(${totalDays}, 1fr)`;
+
+                // Headers
+                timelineEl.innerHTML += '<div class="timeline-header">Time</div>';
+                for (let day = 1; day <= totalDays; day++) {
+                    timelineEl.innerHTML += `<div class="timeline-header">Day ${day}</div>`;
+                }
+
+                // Time Labels
+                const timeLabelCol = document.createElement('div');
+                for (let i = 7; i < 23; i++) { timeLabelCol.innerHTML += `<div style="height:60px; text-align:right; padding-right:8px;">${i}:00</div>`; }
+                timelineEl.appendChild(timeLabelCol);
+
+                // Day Columns
+                for (let day = 1; day <= totalDays; day++) {
+                    const dayCol = document.createElement('div');
+                    dayCol.className = 'day-column';
+                    dayCol.dataset.day = day;
+                    dayCol.addEventListener('dragover', handleDragOver);
+                    dayCol.addEventListener('drop', handleDrop);
+
+                    for (let i = 7; i < 23; i++) { dayCol.innerHTML += '<div style="height:60px; border-bottom: 1px dotted #eee;"></div>'; }
+
+                    state.placedPlans.filter(p => p.day === day).forEach(plan => {
+                        const div = document.createElement('div');
+                        div.className = 'placed-box';
+                        div.id = plan.id;
+                        div.draggable = true;
+                        div.style.top = `${(plan.startMinutes - 7*60) * PIXELS_PER_MINUTE}px`;
+                        div.style.height = `${plan.durationMinutes * PIXELS_PER_MINUTE}px`;
+                        div.style.borderColor = `var(--color-${plan.category})`;
+                        div.innerHTML = `
+                            <div class="resize-handle top"></div>
+                            <div style="overflow:hidden;">
+                                <strong style="font-size:13px;">${plan.title}</strong>
+                                <p style="font-size:11px; margin:2px 0;">${formatTime(plan.startMinutes)}~${formatTime(plan.startMinutes + plan.durationMinutes)}</p>
+                            </div>
+                            <div class="resize-handle bottom"></div>
+                        `;
+                        div.addEventListener('dragstart', e => handleDragStart(e, plan.id, 'timeline'));
+                        div.addEventListener('dblclick', () => openModal(plan.id));
+                        div.querySelector('.resize-handle.top').addEventListener('mousedown', e => handleResizeStart(e, plan.id, 'top'));
+                        div.querySelector('.resize-handle.bottom').addEventListener('mousedown', e => handleResizeStart(e, plan.id, 'bottom'));
+                        dayCol.appendChild(div);
+                    });
+                    timelineEl.appendChild(dayCol);
+                }
+            }
+            
+            function handleDragStart(e, id, source) {
+                e.stopPropagation();
+                dragContext = { id, source };
+                $('#drag-ghost').style.display = 'block';
+                e.dataTransfer.effectAllowed = 'move';
+            }
+
+            function handleDragOver(e) {
+                e.preventDefault();
+                const dayColumn = e.target.closest('.day-column');
+                if (!dayColumn) return;
+
+                const plan = (dragContext.source === 'library' ? state.planLibrary : state.placedPlans).find(p => p.id === dragContext.id);
+                if (!plan) return;
+
+                const rect = dayColumn.getBoundingClientRect();
+                const y = e.clientY - rect.top;
+                const currentMinutes = Math.round(y / PIXELS_PER_MINUTE / 10) * 10 + 7*60;
+
+                // Time Badge
+                $('#time-badge').style.display = 'block';
+                $('#time-badge').style.left = `${e.clientX + 20}px`;
+                $('#time-badge').style.top = `${e.clientY - 15}px`;
+                $('#time-badge').textContent = `${formatTime(currentMinutes)} ~ ${formatTime(currentMinutes + plan.durationMinutes)}`;
+                
+                // Ghost
+                $('#drag-ghost').style.left = `${e.clientX + 5}px`;
+                $('#drag-ghost').style.top = `${e.clientY + 5}px`;
+                $('#drag-ghost').innerHTML = `<strong>${plan.title}</strong>`;
+            }
+
+            function handleDrop(e) {
+                e.preventDefault();
+                $('#time-badge').style.display = 'none';
+                $('#drag-ghost').style.display = 'none';
+                const dayColumn = e.target.closest('.day-column');
+                if (!dayColumn || !dragContext.id) return;
+
+                const day = parseInt(dayColumn.dataset.day);
+                const rect = dayColumn.getBoundingClientRect();
+                const y = e.clientY - rect.top;
+                const startMinutes = Math.round(y / PIXELS_PER_MINUTE / 10) * 10 + 7*60;
+
+                // Conflict Check
+                const sourcePlan = (dragContext.source === 'library' ? state.planLibrary : state.placedPlans).find(p => p.id === dragContext.id);
+                const endMinutes = startMinutes + sourcePlan.durationMinutes;
+                const conflict = state.placedPlans.find(p => p.day === day && p.id !== dragContext.id && Math.max(p.startMinutes, startMinutes) < Math.min(p.startMinutes + p.durationMinutes, endMinutes));
+                if (conflict) {
+                    alert(`'${conflict.title}'와 시간이 겹칩니다!`);
+                    return;
+                }
+
+                if (dragContext.source === 'library') {
+                    const newPlan = { ...sourcePlan, id: `placed-${Date.now()}`, day, startMinutes };
+                    state.placedPlans.push(newPlan);
+                } else {
+                    const planToMove = state.placedPlans.find(p => p.id === dragContext.id);
+                    if (planToMove) { planToMove.day = day; planToMove.startMinutes = startMinutes; }
+                }
+                dragContext = {};
+                render();
+            }
+
+            function handleResizeStart(e, id, handle) {
+                e.stopPropagation();
+                const plan = state.placedPlans.find(p => p.id === id);
+                dragContext = { isResizing: true, id, handle, originalY: e.clientY, originalHeight: plan.durationMinutes, originalStart: plan.startMinutes };
+                document.body.style.cursor = 'ns-resize';
+            }
+
+            document.addEventListener('mousemove', (e) => {
+                if (!dragContext.isResizing) return;
+                const { id, handle, originalY, originalHeight, originalStart } = dragContext;
+                const plan = state.placedPlans.find(p => p.id === id);
+                if (!plan) return;
+
+                const deltaY = e.clientY - originalY;
+                const deltaMinutes = Math.round(deltaY / PIXELS_PER_MINUTE / 10) * 10;
+
+                if (handle === 'bottom') {
+                    plan.durationMinutes = Math.max(30, originalHeight + deltaMinutes);
+                } else { // top
+                    const newStart = originalStart + deltaMinutes;
+                    const newDuration = originalHeight - deltaMinutes;
+                    if (newDuration >= 30) { plan.startMinutes = newStart; plan.durationMinutes = newDuration; }
+                }
+                render();
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (dragContext.isResizing) {
+                    dragContext = {};
+                    document.body.style.cursor = 'default';
+                }
+            });
+
+            function openModal(id) {
+                const isNew = id === null;
+                const plan = isNew ? { id: `lib-${Date.now()}`, title: '', category: 'custom', durationMinutes: 60, cost: '0', memo: '' } : state.planLibrary.find(p=>p.id===id) || state.placedPlans.find(p=>p.id===id);
+                if (!plan) return;
+
+                $('#modalTitle').textContent = isNew ? '새 일정 추가' : '일정 편집';
+                $('#planIdInput').value = id || plan.id;
+                $('#planTitleInput').value = plan.title;
+                $('#planDurationInput').value = plan.durationMinutes;
+                $('#planCostInput').value = plan.cost;
+                $('#planMemoInput').value = plan.memo;
+                
+                const categorySelect = $('#planCategoryInput');
+                categorySelect.innerHTML = Object.entries(CATEGORIES).map(([key, value]) => `<option value="${key}" ${plan.category === key ? 'selected' : ''}>${value}</option>`).join('');
+                
+                const startInput = $('#planStartInput');
+                if (plan.startMinutes !== undefined) { startInput.value = formatTime(plan.startMinutes); } else { startInput.value = ''; }
+
+                $('#deleteBtn').style.display = isNew ? 'none' : 'block';
+                $('#editModal').classList.add('visible');
+            }
+
+            $('#cancelBtn').addEventListener('click', () => $('#editModal').classList.remove('visible'));
+            $('#saveBtn').addEventListener('click', () => {
+                const id = $('#planIdInput').value;
+                const isPlaced = id.startsWith('placed-');
+                let plan = isPlaced ? state.placedPlans.find(p=>p.id===id) : state.planLibrary.find(p=>p.id===id);
+                const isNew = !plan;
+                if(isNew) plan = {};
+
+                plan.id = id;
+                plan.title = $('#planTitleInput').value;
+                plan.category = $('#planCategoryInput').value;
+                plan.durationMinutes = parseInt($('#planDurationInput').value);
+                plan.cost = $('#planCostInput').value;
+                plan.memo = $('#planMemoInput').value;
+                if(isPlaced) plan.startMinutes = timeToMinutes($('#planStartInput').value);
+
+                if(isNew) state.planLibrary.push(plan);
+
+                $('#editModal').classList.remove('visible');
+                render();
+            });
+            $('#deleteBtn').addEventListener('click', () => {
+                 const id = $('#planIdInput').value;
+                 state.planLibrary = state.planLibrary.filter(p => p.id !== id);
+                 state.placedPlans = state.placedPlans.filter(p => p.id !== id);
+                 $('#editModal').classList.remove('visible');
+                 render();
+            });
+            
+            // Simulated Place Search
+            $('#planLocationInput').addEventListener('input', (e) => {
+                const query = e.target.value;
+                const resultsEl = $('#place-search-results');
+                resultsEl.innerHTML = '';
+                if (query.includes('도쿄')) {
+                    const fakeResults = [{name: '도쿄타워', addr: 'Minato City'}, {name: '도쿄역', addr: 'Chiyoda City'}];
+                    fakeResults.forEach(r => {
+                        const div = document.createElement('div');
+                        div.textContent = `${r.name} (${r.addr})`;
+                        div.onclick = () => { $('#planTitleInput').value = r.name; resultsEl.innerHTML = ''; };
+                        resultsEl.appendChild(div);
+                    });
+                }
+            });
+
+            loadState();
+            render();
+        });
+    </script>
+</body>
+</html>

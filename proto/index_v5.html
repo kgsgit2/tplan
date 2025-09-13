@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPlan Redesign Prototype v5 - Responsive</title>
+    <style>
+        :root {
+            --color-primary: #4A69E2;
+            --color-primary-dark: #3b54b4;
+            --color-bg: #F8F9FA;
+            --color-surface: #FFFFFF;
+            --color-border: #E9ECEF;
+            --color-text: #212529;
+            --color-text-muted: #6C757D;
+            --color-accent-red: #E74C3C;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+            --border-radius: 8px;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --spacing-md: 16px;
+        }
+        body { font-family: var(--font-family); background-color: var(--color-bg); color: var(--color-text); margin: 0; font-size: 16px; }
+        #app-container { display: flex; flex-direction: column; height: 100vh; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 12px var(--spacing-md); background-color: var(--color-surface); box-shadow: var(--shadow-sm); z-index: 100; }
+        .main-content { display: flex; gap: var(--spacing-md); flex-grow: 1; overflow: hidden; padding: var(--spacing-md); }
+        .sidebar { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: var(--spacing-md); }
+        .plan-library { background-color: var(--color-surface); border-radius: var(--border-radius); box-shadow: var(--shadow-sm); padding: var(--spacing-md); flex-grow: 1; overflow-y: auto; }
+        .timeline-area { flex-grow: 1; display: flex; flex-direction: column; background-color: var(--color-surface); border-radius: var(--border-radius); box-shadow: var(--shadow-sm); overflow: hidden; }
+        .timeline-wrapper { flex-grow: 1; overflow: auto; }
+        .plan-box { padding: 12px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid; background-color: var(--color-bg); cursor: grab; transition: all 0.2s; }
+        .placed-box { position: absolute; width: calc(100% - 4px); left: 2px; padding: 6px 10px; border-radius: 4px; z-index: 10; cursor: move; border-left: 4px solid; background-color: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .resize-handle { position: absolute; left: 0; right: 0; height: 8px; z-index: 11; }
+        .resize-handle.top { top: -4px; cursor: ns-resize; }
+        .resize-handle.bottom { bottom: -4px; cursor: ns-resize; }
+        #time-badge { position: fixed; background: var(--color-accent-red); color: white; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: 600; z-index: 9999; pointer-events: none; display: none; }
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; visibility: hidden; opacity: 0; transition: opacity 0.2s; backdrop-filter: blur(4px); }
+        .modal-backdrop.visible { visibility: visible; opacity: 1; }
+        .modal { background-color: var(--color-surface); padding: 24px; border-radius: var(--border-radius); width: 90%; max-width: 500px; box-shadow: var(--shadow-md); }
+        .btn { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-size: 15px; font-weight: 600; transition: all 0.2s; }
+        .btn-primary { background-color: var(--color-primary); color: white; }
+        .btn-primary:hover { background-color: var(--color-primary-dark); }
+        .btn-secondary { background-color: var(--color-border); color: var(--color-text-muted); }
+        .btn-secondary:hover { background-color: #d8dde2; }
+        
+        /* Responsive Mobile Layout */
+        .mobile-day-tabs { display: none; }
+        @media (max-width: 768px) {
+            .main-content { flex-direction: column; }
+            .sidebar { width: 100%; height: 250px; flex-shrink: 0; }
+            .timeline-area { flex-grow: 1; }
+            .desktop-timeline { display: none; }
+            .mobile-day-tabs { display: flex; flex-shrink: 0; overflow-x: auto; padding: 0 var(--spacing-md); border-bottom: 1px solid var(--color-border); }
+            .day-tab { padding: 12px 16px; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 500; color: var(--color-text-muted); white-space: nowrap; }
+            .day-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 600; }
+            .mobile-timeline .day-column { border-right: none; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <header class="header" id="app-header"></header>
+        <main class="main-content">
+            <aside class="sidebar" id="sidebar"></aside>
+            <section class="timeline-area">
+                <div class="mobile-day-tabs" id="mobile-day-tabs"></div>
+                <div class="timeline-wrapper desktop-timeline" id="desktop-timeline-wrapper"></div>
+                <div class="timeline-wrapper mobile-timeline" id="mobile-timeline-wrapper"></div>
+            </section>
+        </main>
+    </div>
+
+    <div id="time-badge"></div>
+    <div class="modal-backdrop" id="edit-modal"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const App = {
+                state: {},
+                init() {
+                    this.loadState();
+                    this.addEventListeners();
+                    this.render();
+                },
+                loadState() {
+                    const saved = localStorage.getItem('tplan-v5-state');
+                    if (saved) {
+                        this.state = JSON.parse(saved);
+                    } else {
+                        this.state = {
+                            tripTitle: '도쿄 여행', startDate: '2025-01-15', endDate: '2025-01-17',
+                            planLibrary: [{ id: 1, title: '공항 리무진', durationMinutes: 70, category: 'transport' }],
+                            placedPlans: [{ id: 2, title: '호텔 체크인', durationMinutes: 45, category: 'accommodation', dayIndex: 0, startMinutes: 14 * 60 }],
+                            mobileActiveDay: 0,
+                        };
+                    }
+                },
+                saveState() { localStorage.setItem('tplan-v5-state', JSON.stringify(this.state)); },
+                
+                render() {
+                    this.renderHeader();
+                    this.renderSidebar();
+                    this.renderTimeline();
+                    this.saveState();
+                },
+
+                renderHeader() {
+                    document.getElementById('app-header').innerHTML = `
+                        <h1 style="font-weight:700; font-size: 22px;">${this.state.tripTitle}</h1>
+                        <div>
+                            <input type="date" id="startDateInput" value="${this.state.startDate}" style="padding:8px; border-radius:6px; border:1px solid var(--color-border);">
+                            <span style="margin:0 8px;">~</span>
+                            <input type="date" id="endDateInput" value="${this.state.endDate}" style="padding:8px; border-radius:6px; border:1px solid var(--color-border);">
+                        </div>
+                    `;
+                },
+
+                renderSidebar() {
+                    const sidebar = document.getElementById('sidebar');
+                    sidebar.innerHTML = `
+                        <div class="plan-library" id="plan-library">
+                            <h2 style="font-weight:600; margin-bottom:16px;">Plan Library</h2>
+                            <div id="plan-list"></div>
+                            <button id="add-new-plan-btn" class="btn btn-primary" style="width:100%; margin-top:16px;">+ Add New Plan</button>
+                        </div>
+                    `;
+                    const planList = document.getElementById('plan-list');
+                    this.state.planLibrary.forEach(plan => {
+                        const div = document.createElement('div');
+                        div.className = 'plan-box';
+                        div.id = `lib-${plan.id}`;
+                        div.draggable = true;
+                        div.innerHTML = `<h3 style="font-size:15px; font-weight:600;">${plan.title}</h3><p style="font-size:13px; color:var(--color-text-muted);">${plan.durationMinutes} min</p>`;
+                        div.style.borderColor = this.getCategoryColor(plan.category);
+                        div.addEventListener('dragstart', e => this.dragContext = { id: plan.id, source: 'library' });
+                        planList.appendChild(div);
+                    });
+                },
+
+                renderTimeline() {
+                    const totalDays = this.getTotalDays();
+                    // Desktop
+                    const desktopWrapper = document.getElementById('desktop-timeline-wrapper');
+                    desktopWrapper.innerHTML = '';
+                    const desktopGrid = document.createElement('div');
+                    desktopGrid.style.display = 'grid';
+                    desktopGrid.style.gridTemplateColumns = `60px repeat(${totalDays}, 1fr)`;
+                    desktopGrid.style.minHeight = '100%';
+                    desktopWrapper.appendChild(desktopGrid);
+                    
+                    let timeLabels = '<div class="time-label-col">';
+                    for(let h=7; h<23; h++) { timeLabels += `<div style="height:60px; text-align:right; padding-right:8px; font-size:12px; color:var(--color-text-muted);">${h}:00</div>`; }
+                    timeLabels += '</div>';
+                    desktopGrid.innerHTML += timeLabels;
+
+                    for (let i = 0; i < totalDays; i++) {
+                        desktopGrid.appendChild(this.createDayColumn(i));
+                    }
+
+                    // Mobile
+                    const mobileTabs = document.getElementById('mobile-day-tabs');
+                    mobileTabs.innerHTML = '';
+                    for (let i = 0; i < totalDays; i++) {
+                        const tab = document.createElement('div');
+                        tab.className = `day-tab ${i === this.state.mobileActiveDay ? 'active' : ''}`;
+                        tab.textContent = `Day ${i + 1}`;
+                        tab.dataset.dayIndex = i;
+                        mobileTabs.appendChild(tab);
+                    }
+                    const mobileWrapper = document.getElementById('mobile-timeline-wrapper');
+                    mobileWrapper.innerHTML = '';
+                    mobileWrapper.appendChild(this.createDayColumn(this.state.mobileActiveDay));
+                },
+
+                createDayColumn(dayIndex) {
+                    const dayCol = document.createElement('div');
+                    dayCol.className = 'day-column';
+                    dayCol.dataset.dayIndex = dayIndex;
+                    dayCol.style.position = 'relative';
+
+                    for (let h = 7; h < 23; h++) {
+                        const slot = document.createElement('div');
+                        slot.style.height = '60px';
+                        slot.style.borderBottom = '1px solid var(--color-border)';
+                        dayCol.appendChild(slot);
+                    }
+
+                    this.state.placedPlans.filter(p => p.dayIndex === dayIndex).forEach(plan => {
+                        const div = document.createElement('div');
+                        div.className = 'placed-box';
+                        div.id = `placed-${plan.id}`;
+                        div.draggable = true;
+                        div.style.top = `${(plan.startMinutes - 7 * 60)}px`;
+                        div.style.height = `${plan.durationMinutes}px`;
+                        div.style.borderColor = this.getCategoryColor(plan.category);
+                        div.innerHTML = `<strong style="font-size:14px;">${plan.title}</strong>`;
+                        div.addEventListener('dragstart', e => { e.stopPropagation(); this.dragContext = { id: plan.id, source: 'timeline' }; });
+                        dayCol.appendChild(div);
+                    });
+                    return dayCol;
+                },
+
+                addEventListeners() {
+                    document.body.addEventListener('change', e => {
+                        if (e.target.matches('#startDateInput, #endDateInput')) {
+                            this.state.startDate = document.getElementById('startDateInput').value;
+                            this.state.endDate = document.getElementById('endDateInput').value;
+                            this.state.mobileActiveDay = 0;
+                            this.render();
+                        }
+                    });
+                    document.body.addEventListener('click', e => {
+                        if (e.target.matches('.day-tab')) {
+                            this.state.mobileActiveDay = parseInt(e.target.dataset.dayIndex);
+                            this.renderTimeline();
+                        }
+                    });
+                    document.body.addEventListener('dragover', e => e.preventDefault());
+                    document.body.addEventListener('drop', e => {
+                        e.preventDefault();
+                        const dayColumn = e.target.closest('.day-column');
+                        if (!dayColumn || !this.dragContext) return;
+
+                        const dayIndex = parseInt(dayColumn.dataset.dayIndex);
+                        const rect = dayColumn.getBoundingClientRect();
+                        const y = e.clientY - rect.top;
+                        const startMinutes = Math.round(y / 10) * 10 + 7 * 60;
+
+                        const { id, source } = this.dragContext;
+                        if (source === 'library') {
+                            const plan = this.state.planLibrary.find(p => p.id === id);
+                            this.state.placedPlans.push({ ...plan, id: Date.now(), dayIndex, startMinutes });
+                        } else {
+                            const plan = this.state.placedPlans.find(p => p.id === id);
+                            plan.dayIndex = dayIndex;
+                            plan.startMinutes = startMinutes;
+                        }
+                        this.dragContext = null;
+                        this.render();
+                    });
+                },
+
+                getTotalDays() { return (new Date(this.state.endDate) - new Date(this.state.startDate)) / (1000 * 60 * 60 * 24) + 1; },
+                getCategoryColor(category) {
+                    const colors = { transport: '#81ecec', food: '#fab1a0', accommodation: '#a29bfe', sightseeing: '#74b9ff', activity: '#55efc4', shopping: '#fd79a8' };
+                    return colors[category] || '#dfe6e9';
+                }
+            };
+
+            App.init();
+        });
+    </script>
+</body>
+</html>
