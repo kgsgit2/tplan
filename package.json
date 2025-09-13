@@ -21,7 +21,12 @@
     "claude:supabase": "node .claude/supabase-session-sync.js handover",
     "claude:end": "node .claude/auto-end-session.js",
     "c:s": "node .claude/simple-commands.js s",
-    "c:e": "node .claude/simple-commands.js e"
+    "c:e": "node .claude/simple-commands.js e",
+    "s": "node .claude/auto-sync.js start",
+    "e": "node .claude/auto-sync.js end",
+    "claude:quick": "node .claude/quick-handover.js",
+    "claude:quick-save": "node .claude/quick-handover.js save",
+    "claude:quick-load": "node .claude/quick-handover.js load"
   },
   "repository": {
     "type": "git",
